@@ -112,7 +112,8 @@ class BaseDetector(object):
       torch.cuda.synchronize()
       pre_process_time = time.time()
       pre_time += pre_process_time - scale_start_time
-      
+
+      # cv2.imwrite('../image.png', image)
       output, dets, forward_time = self.process(images, return_time=True)
 
       torch.cuda.synchronize()
