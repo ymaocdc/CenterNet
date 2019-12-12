@@ -11,7 +11,7 @@ class opts(object):
     self.parser = argparse.ArgumentParser()
     # basic experiment setting
     self.parser.add_argument('task', default='ctdet',
-                             help='ctdet | ddd | multi_pose | exdet')
+                             help='ctdet | ddd | multi_pose | exdet | pku')
     self.parser.add_argument('--dataset', default='coco',
                              help='coco | kitti | coco_hp | pascal')
     self.parser.add_argument('--exp_id', default='default')
@@ -268,7 +268,8 @@ class opts(object):
       opt.chunk_sizes.append(slave_chunk_size)
     print('training chunk_sizes:', opt.chunk_sizes)
 
-    opt.root_dir = os.path.join(os.path.dirname(__file__), '..', '..')
+    # opt.root_dir = os.path.join(os.path.dirname(__file__), '..', '..')
+    opt.root_dir = '/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku'
     opt.data_dir = os.path.join(opt.root_dir, 'data')
     opt.exp_dir = os.path.join(opt.root_dir, 'exp', opt.task)
     opt.save_dir = os.path.join(opt.exp_dir, opt.exp_id)
@@ -328,6 +329,15 @@ class opts(object):
         opt.heads.update({'hm_hp': 17})
       if opt.reg_hp_offset:
         opt.heads.update({'hp_offset': 2})
+    elif opt.task == 'pku':
+      # assert opt.dataset in ['gta', 'kitti', 'viper']
+      opt.heads = {'hm': opt.num_classes, 'wh': 2 if not opt.cat_spec_wh else 2 * opt.num_classes,
+                   'dep': 1, 'rot': 8, 'dim': 3}
+      if opt.reg_bbox:
+        opt.heads.update(
+          {'wh': 2})
+      if opt.reg_offset:
+        opt.heads.update({'reg': 2})
     else:
       assert 0, 'task not defined!'
     print('heads', opt.heads)
@@ -350,6 +360,10 @@ class opts(object):
       'ddd': {'default_resolution': [384, 1280], 'num_classes': 3, 
                 'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225],
                 'dataset': 'kitti'},
+        'pku': {'default_resolution': [512, 512], 'num_classes': 3,
+                'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225],
+                'dataset': 'pku'}
+
     }
     class Struct:
       def __init__(self, entries):

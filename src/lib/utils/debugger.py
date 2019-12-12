@@ -57,11 +57,16 @@ class Debugger(object):
       self.W = 1920
       self.H = 1080
       self.dim_scale = 3
-    elif num_classes == 3 or dataset == 'kitti':
+    elif dataset == 'kitti':
       self.names = kitti_class_name
       self.focal_length = 721.5377
       self.W = 1242
       self.H = 375
+    elif dataset =='pku':
+        self.names = pku_class_name
+        self.focal_length = 2304.5479
+        self.W = 3384
+        self.H = 2710
     num_classes = len(self.names)
     self.down_ratio=down_ratio
     # for bird view
@@ -328,6 +333,10 @@ class Debugger(object):
             box_3d = compute_box_3d(dim, loc, rot_y)
             box_2d = project_to_image(box_3d, calib)
             self.imgs[img_id] = draw_box_3d(self.imgs[img_id], box_2d, cl)
+            # import matplotlib.pyplot as plt
+            # plt.imshow(self.imgs[img_id])
+            # plt.show()
+
 
   def compose_vis_add(
     self, img_path, dets, calib,
@@ -435,6 +444,7 @@ kitti_class_name = [
 gta_class_name = [
   'p', 'v'
 ]
+pku_class_name = ['2x', '3x', 'SUV']
 
 pascal_class_name = ["aeroplane", "bicycle", "bird", "boat", "bottle", "bus", 
   "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike", 

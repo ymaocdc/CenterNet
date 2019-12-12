@@ -3,14 +3,22 @@ from tqdm import tqdm
 import datetime
 import numpy as np
 
+class NumpyEncoder(json.JSONEncoder):
+    """Helper class to help serialize numpy ndarray"""
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
+
 
 mode = 'train'
 
 root_folder = '/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku'
-image_folder = os.path.join(root_folder, '{}_images'.format(mode))
-label_folder = os.path.join(root_folder, '{}_labels'.format(mode))
+image_folder = os.path.join(root_folder, 'data/images', '{}_images'.format(mode))
+label_folder = os.path.join(root_folder, 'with_mask_labels')
 
 __CLASS__ = ['__background__', '2x', '3x', 'SUV']
+_class_ = np.array(__CLASS__)
 # __CLASS__ = ['bg', 'car']
 annotations = {}
 
@@ -20,7 +28,7 @@ annotations["info"] = {
     "url": "http://cocodataset.org",
     "version": "1.0",
     "year": 2019,
-    "contributor": "andy.wei",
+    "contributor": "YMAO",
     "date_created": "2019/01/24"
 }
 # coco annotations licenses.
@@ -51,6 +59,7 @@ assert len(im_files) == len(label_files)
 
 annotations["images"] = []
 annotations["annotations"] = []
+num_obj = 0
 for image_id, im_file in enumerate(im_files):
     width = 3384
     height = 2710
@@ -72,18 +81,18 @@ for image_id, im_file in enumerate(im_files):
     with open(label_file, 'r') as fin:
         gt = json.load(fin)
     for obj_idx, obj in enumerate(gt['objects']):
-        cls = np.argwhere(annotations["categories"] == obj['car_type'])
+        cls = np.argwhere(_class_ == obj['car_type']).item()
         xmin, ymin, w, h = obj['2D_bbox_xyxy'][0], obj['2D_bbox_xyxy'][1], obj['2D_bbox_xywh'][2], obj['2D_bbox_xywh'][3]
         # coco annotations annotations.
         annotations["annotations"].append(
             {
-                "id": obj_idx,
+                "id": num_obj,
                 "image_id": image_id,
-                "category_id": cls + 1,
-                "segmentation": [[]],
+                "category_id": cls,
+                "segmentation": obj['segmentation'],
                 "area": w * h,
                 "iscrowd": 0,
-                "bbox": obj['2D_bbox_xyxy'],
+                "bbox": [xmin, ymin, w, h],
                 'projected_3D_center': obj['projected_3D_center'],
                 'local_yaw': obj['local_yaw'],
                 'theta': obj['theta'],
@@ -92,10 +101,12 @@ for image_id, im_file in enumerate(im_files):
                 'global_yaw': obj['global_yaw'],
                 '3D_dimension': obj['3D_dimension'],
                 'BPE': [obj['BPE_left'][0], obj['BPE_right'][1]],
-                'FPE': [obj['FPE_left'][0], obj['FPE_right'][1]]
+                'FPE': [obj['FPE_left'][0], obj['FPE_right'][1]],
+                '3D_location': obj['3D_location']
             }
         )
+        num_obj = num_obj + 1
 
-json_path = os.path.join(root_folder, '{}_coco_format'.format(mode)+".json")
+json_path = os.path.join(root_folder, '{}_coco_format_with_mask'.format(mode)+".json")
 with open(json_path, "w") as f:
-    json.dump(annotations, f)
+    json.dump(annotations, f,cls=NumpyEncoder)
