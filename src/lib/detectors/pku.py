@@ -101,7 +101,7 @@ class PkuDetector(BaseDetector):
             image, results, self.this_calib,
             center_thresh=self.opt.vis_thresh, img_id='add_pred')
         import matplotlib.pyplot as plt
-        fig = plt.figure(figsize=(15,15))
+        fig = plt.figure(figsize=(10, 10))
         plt.imshow(image[:,:,::-1])
         plt.show()
         debugger.add_bird_view(

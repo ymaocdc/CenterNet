@@ -10,15 +10,24 @@ def compute_box_3d(dim, location, rotation_y):
   # location: 3
   # rotation_y: 1
   # return: 8 x 3
+  # rotation_y = rotation_y+np.pi/2
   c, s = np.cos(rotation_y), np.sin(rotation_y)
-  R = np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]], dtype=np.float32)
+  pitch = 0
+  roll = 0.1
+  Y = np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]], dtype=np.float32)
+  P = np.array([[1, 0, 0],
+                [0, np.cos(pitch), -np.sin(pitch)],
+                [0, np.sin(pitch), np.cos(pitch)]], dtype=np.float32)
+  R = np.array([[np.cos(roll), -np.sin(roll), 0],
+                [np.sin(roll), np.cos(roll), 0],
+                [0, 0, 1]], dtype=np.float32)
   l, w, h = dim[2], dim[1], dim[0]
   x_corners = [l/2, l/2, -l/2, -l/2, l/2, l/2, -l/2, -l/2]
   y_corners = [0,0,0,0,-h,-h,-h,-h]
   z_corners = [w/2, -w/2, -w/2, w/2, w/2, -w/2, -w/2, w/2]
 
   corners = np.array([x_corners, y_corners, z_corners], dtype=np.float32)
-  corners_3d = np.dot(R, corners) 
+  corners_3d = np.dot(np.dot(Y, np.dot(P, R)), corners)
   corners_3d = corners_3d + np.array(location, dtype=np.float32).reshape(3, 1)
   return corners_3d.transpose(1, 0)
 

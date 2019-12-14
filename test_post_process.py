@@ -333,32 +333,100 @@ if __name__ == "__main__":
 
         img = image.copy()
 
-        center = [1500, 1500]
+        center = [1500, 2000]
         alpha = -np.pi/3*2
         dim = [1.6, 1.0, 4.0]
         depth = 20
-
-
-
-        alpha = np.arctan(rot[:, 2] / rot[:, 3]) + (-0.5 * np.pi)
-        alpha = np.arctan(rot[:, 6] / rot[:, 7]) + (0.5 * np.pi)
-
 
         loc, rot_y = ddd2locrot(
             center, alpha, dim, depth, calib)
         # rot_y = -np.pi / 4 * 3
 
-
         # dim = [153.69274773216807, 60.897463964838835, 4.80898011]
         # loc = [5,5,20]
         box_3d = compute_box_3d(dim, loc, rot_y)
         box_2d = project_to_image(box_3d, calib)
-        cl = (0, 255, 255)
+        cl = (0, 0, 255)
         img = draw_box_3d(img, box_2d, cl)
         plt.figure(figsize=(10, 10))
         plt.imshow(img[:, :, ::-1])
         plt.show()
 
+
+        img = image.copy()
+        yaw = 0
+        pitch = 0
+        roll = 0.4
+        Rt = np.eye(4)
+        t = np.array([0, 0, 10])
+        Rt[:3, 3] = t
+        Rt[:3, :3] = euler_to_Rot(yaw, pitch, roll).T
+        Rt = Rt[:3, :]
+
+        fr = np.array([0, 0, 0, 1])
+        img_cor_points = np.dot(k, np.dot(Rt, fr))
+        img_cor_points = img_cor_points.T
+        img_cor_points[0] /= img_cor_points[2]
+        img_cor_points[1] /= img_cor_points[2]
+        cv2.circle(img, (int(img_cor_points[0]), int(img_cor_points[1])), 20, (255, 0, 0), -1)
+
+        fr = np.array([2, 0, 0, 1])
+        img_cor_points = np.dot(k, np.dot(Rt, fr))
+        img_cor_points = img_cor_points.T
+        img_cor_points[0] /= img_cor_points[2]
+        img_cor_points[1] /= img_cor_points[2]
+        cv2.circle(img, (int(img_cor_points[0]), int(img_cor_points[1])), 20, (0, 255, 0), -1)
+
+        fr = np.array([0, 2, 0, 1])
+        img_cor_points = np.dot(k, np.dot(Rt, fr))
+        img_cor_points = img_cor_points.T
+        img_cor_points[0] /= img_cor_points[2]
+        img_cor_points[1] /= img_cor_points[2]
+        cv2.circle(img, (int(img_cor_points[0]), int(img_cor_points[1])), 20, (0, 0, 255), -1)
+
+        fr = np.array([0, 0, 2, 1])
+        img_cor_points = np.dot(k, np.dot(Rt, fr))
+        img_cor_points = img_cor_points.T
+        img_cor_points[0] /= img_cor_points[2]
+        img_cor_points[1] /= img_cor_points[2]
+        cv2.circle(img, (int(img_cor_points[0]), int(img_cor_points[1])), 20, (0, 255, 255), -1)
+
+        plt.imshow(img[:, :, ::-1])
+        plt.show()
+
+        img = image.copy()
+        yaw = 0
+        pitch = 0
+        roll = 0
+        x, y, z = 0,0,10
+        x_l, y_l, z_l = 1,2,4
+        Rt = np.eye(4)
+        t = np.array([x, y, z])
+        Rt[:3, 3] = t
+        Rt[:3, :3] = euler_to_Rot(yaw, pitch, roll).T
+        Rt = Rt[:3, :]
+        P = np.array([[0, 0, 0, 1],
+                      [x_l, y_l, -z_l, 1],
+                      [x_l, y_l, z_l, 1],
+                      [-x_l, y_l, z_l, 1],
+                      [-x_l, y_l, -z_l, 1],
+                      [x_l, -y_l, -z_l, 1],
+                      [x_l, -y_l, z_l, 1],
+                      [-x_l, -y_l, z_l, 1],
+                      [-x_l, -y_l, -z_l, 1]]).T
+        img_cor_points = np.dot(k, np.dot(Rt, P))
+        img_cor_points = img_cor_points.T
+        img_cor_points[:, 0] /= img_cor_points[:, 2]
+        img_cor_points[:, 1] /= img_cor_points[:, 2]
+        # call this function before chage the dtype
+        # img_cor_2_world_cor()
+        img_cor_points = img_cor_points.astype(int)
+
+        img = draw_line(img, img_cor_points)
+        img = draw_points(img, img_cor_points)
+
+        plt.imshow(img[:, :, ::-1])
+        plt.show()
 
         items = pred_string.split(' ')
         model_types, yaws, pitches, rolls, xs, ys, zs = [items[i::7] for i in range(7)]
