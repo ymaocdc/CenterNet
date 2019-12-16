@@ -20,12 +20,13 @@ class DddLoss(torch.nn.Module):
         self.crit = torch.nn.MSELoss() if opt.mse_loss else FocalLoss()
         self.crit_reg = L1Loss()
         self.crit_rot = BinRotLoss()
+        self.crit_pitch = BinRotLoss()
         self.opt = opt
 
     def forward(self, outputs, batch):
         opt = self.opt
 
-        hm_loss, dep_loss, rot_loss, dim_loss = 0, 0, 0, 0
+        hm_loss, dep_loss, rot_loss, dim_loss, pitch_loss = 0, 0, 0, 0, 0
         wh_loss, off_loss = 0, 0
         for s in range(opt.num_stacks):
             output = outputs[s]
@@ -49,6 +50,10 @@ class DddLoss(torch.nn.Module):
                 rot_loss += self.crit_rot(output['rot'], batch['rot_mask'],
                                           batch['ind'], batch['rotbin'],
                                           batch['rotres']) / opt.num_stacks
+            if opt.pitch_weight > 0 and opt.reg_pitch:
+                pitch_loss += self.crit_rot(output['pitch'], batch['pitch_mask'],
+                                          batch['ind'], batch['pitchbin'],
+                                          batch['pitchres']) / opt.num_stacks
             if opt.reg_bbox and opt.wh_weight > 0:
                 wh_loss += self.crit_reg(output['wh'], batch['rot_mask'],
                                          batch['ind'], batch['wh']) / opt.num_stacks
@@ -57,11 +62,11 @@ class DddLoss(torch.nn.Module):
                                           batch['ind'], batch['reg']) / opt.num_stacks
         loss = opt.hm_weight * hm_loss + opt.dep_weight * dep_loss + \
                opt.dim_weight * dim_loss + opt.rot_weight * rot_loss + \
-               opt.wh_weight * wh_loss + opt.off_weight * off_loss
+               opt.wh_weight * wh_loss + opt.off_weight * off_loss+ opt.pitch_weight * pitch_loss
 
         loss_stats = {'loss': loss, 'hm_loss': hm_loss, 'dep_loss': dep_loss,
                       'dim_loss': dim_loss, 'rot_loss': rot_loss,
-                      'wh_loss': wh_loss, 'off_loss': off_loss}
+                      'wh_loss': wh_loss, 'off_loss': off_loss, 'pitch_loss': pitch_loss}
         return loss, loss_stats
 
 
@@ -71,7 +76,7 @@ class PkuTrainer(BaseTrainer):
 
     def _get_losses(self, opt):
         loss_states = ['loss', 'hm_loss', 'dep_loss', 'dim_loss', 'rot_loss',
-                       'wh_loss', 'off_loss']
+                       'wh_loss', 'off_loss', 'pitch_loss']
         loss = DddLoss(opt)
         return loss_states, loss
 

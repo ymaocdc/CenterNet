@@ -173,6 +173,10 @@ class opts(object):
                              help='loss weight for 3d bounding box size.')
     self.parser.add_argument('--rot_weight', type=float, default=1,
                              help='loss weight for orientation.')
+    self.parser.add_argument('--reg_pitch', action='store_true', default=False,
+                             help='regress pitch.')
+    self.parser.add_argument('--pitch_weight', type=float, default=1,
+                             help='loss weight for orientation.')
     self.parser.add_argument('--peak_thresh', type=float, default=0.2)
     
     # task
@@ -338,6 +342,8 @@ class opts(object):
           {'wh': 2})
       if opt.reg_offset:
         opt.heads.update({'reg': 2})
+      if opt.reg_pitch:
+          opt.heads.update({'pitch': 8})
     else:
       assert 0, 'task not defined!'
     print('heads', opt.heads)
