@@ -149,7 +149,7 @@ class PKUDataset(data.Dataset):
                             pitch = pitch - np.pi / 2
                         else:
                             pitch = -(np.pi * 2 - pitch + np.pi / 2)
-                            
+
                         pitch = self._convert_alpha(pitch)
                         if pitch < np.pi / 6. or pitch > 5 * np.pi / 6.:
                             pitchbin[k, 0] = 1
@@ -170,8 +170,6 @@ class PKUDataset(data.Dataset):
                     reg[k] = ct - ct_int
                     reg_mask[k] = 1 if not aug else 0
                     rot_mask[k] = 1
-
-
 
         # print('gt_det', gt_det)
         # print('')

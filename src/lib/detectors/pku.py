@@ -61,11 +61,12 @@ class PkuDetector(BaseDetector):
             output['dep'] = 1. / (output['dep'].sigmoid() + 1e-6) - 1.
             wh = output['wh'] if self.opt.reg_bbox else None
             reg = output['reg'] if self.opt.reg_offset else None
+            pitch = output['pitch'] if self.opt.reg_pitch else None
             torch.cuda.synchronize()
             forward_time = time.time()
 
             dets = ddd_decode(output['hm'], output['rot'], output['dep'],
-                              output['dim'], wh=wh, reg=reg, K=self.opt.K)
+                              output['dim'], wh=wh, reg=reg, K=self.opt.K, pitch=pitch)
         if return_time:
             return output, dets, forward_time
         else:
@@ -98,7 +99,7 @@ class PkuDetector(BaseDetector):
 
     def show_results(self, debugger, image, results):
         debugger.add_3d_detection(
-            image, results, self.this_calib,
+            image, results, self.this_calib, self.opt,
             center_thresh=self.opt.vis_thresh, img_id='add_pred')
         import matplotlib.pyplot as plt
         fig = plt.figure(figsize=(10, 10))

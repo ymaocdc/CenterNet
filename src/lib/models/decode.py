@@ -423,7 +423,7 @@ def exct_decode(
 
     return detections
 
-def ddd_decode(heat, rot, depth, dim, wh=None, reg=None, K=40):
+def ddd_decode(heat, rot, depth, dim, wh=None, reg=None, K=40, pitch=None):
     batch, cat, height, width = heat.size()
     # heat = torch.sigmoid(heat)
     # perform nms on heatmaps
@@ -449,7 +449,7 @@ def ddd_decode(heat, rot, depth, dim, wh=None, reg=None, K=40):
     scores = scores.view(batch, K, 1)
     xs = xs.view(batch, K, 1)
     ys = ys.view(batch, K, 1)
-      
+
     if wh is not None:
         wh = _transpose_and_gather_feat(wh, inds)
         wh = wh.view(batch, K, 2)
@@ -458,7 +458,11 @@ def ddd_decode(heat, rot, depth, dim, wh=None, reg=None, K=40):
     else:
         detections = torch.cat(
             [xs, ys, scores, rot, depth, dim, clses], dim=2)
-      
+    if pitch is not None:
+        pitch = _transpose_and_gather_feat(pitch, inds)
+        pitch = pitch.view(batch, K, 8)
+        detections = torch.cat([detections, pitch], dim=2)
+
     return detections
 
 def ctdet_decode(heat, wh, reg=None, cat_spec_wh=False, K=100):

@@ -5,7 +5,7 @@ from __future__ import print_function
 import numpy as np
 import cv2
 
-def compute_box_3d(dim, location, rotation_y):
+def compute_box_3d(dim, location, rotation_y, pitch):
   # dim: 3
   # location: 3
   # rotation_y: 1
@@ -13,7 +13,7 @@ def compute_box_3d(dim, location, rotation_y):
   # rotation_y = rotation_y+np.pi/2
   c, s = np.cos(rotation_y), np.sin(rotation_y)
   pitch = 0
-  roll = 0.1
+  roll = -pitch
   Y = np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]], dtype=np.float32)
   P = np.array([[1, 0, 0],
                 [0, np.cos(pitch), -np.sin(pitch)],

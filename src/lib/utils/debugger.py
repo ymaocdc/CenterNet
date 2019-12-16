@@ -314,7 +314,7 @@ class Debugger(object):
 
 
   def add_3d_detection(
-    self, image_or_path, dets, calib, show_txt=True,
+    self, image_or_path, dets, calib, opt, show_txt=True,
     center_thresh=0.5, img_id='det'):
     if isinstance(image_or_path, np.ndarray):
       self.imgs[img_id] = image_or_path
@@ -328,10 +328,12 @@ class Debugger(object):
           loc  = dets[cat][i, 8:11]
           rot_y = dets[cat][i, 11]
           bbox = dets[cat][i, 1:5]
+
+          pitch = dets[cat][i, 13] if opt.reg_pitch else None
           # loc[1] = loc[1] - dim[0] / 2 + dim[0] / 2 / self.dim_scale
           # dim = dim / self.dim_scale
           if loc[2] > 1:
-            box_3d = compute_box_3d(dim, loc, rot_y)
+            box_3d = compute_box_3d(dim, loc, rot_y, pitch)
             box_2d = project_to_image(box_3d, calib)
             self.imgs[img_id] = draw_box_3d(self.imgs[img_id], box_2d, cl)
             self.add_coco_bbox(
