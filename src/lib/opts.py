@@ -177,6 +177,10 @@ class opts(object):
                              help='regress pitch.')
     self.parser.add_argument('--pitch_weight', type=float, default=1,
                              help='loss weight for orientation.')
+    self.parser.add_argument('--reg_3d_center', action='store_true', default=False,
+                             help='regress 3d_center in 2d image.')
+    self.parser.add_argument('--3d_center_weight', type=float, default=1,
+                             help='loss weight for 3d_center in 2d image.')
     self.parser.add_argument('--peak_thresh', type=float, default=0.2)
     
     # task

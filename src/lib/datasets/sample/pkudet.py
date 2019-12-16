@@ -65,6 +65,9 @@ class PKUDataset(data.Dataset):
         trans_output = get_affine_transform(
             c, s, 0, [self.opt.output_w, self.opt.output_h])
 
+        if self.opt.reg_3d_center:
+            hm_3d = np.zeros(
+                (num_classes, self.opt.output_h, self.opt.output_w), dtype=np.float32)
         hm = np.zeros(
             (num_classes, self.opt.output_h, self.opt.output_w), dtype=np.float32)
         wh = np.zeros((self.max_objs, 2), dtype=np.float32)
@@ -116,8 +119,19 @@ class PKUDataset(data.Dataset):
                         for cc in ignore_id:
                             draw_gaussian(hm[cc], ct, radius)
                         hm[ignore_id, ct_int[1], ct_int[0]] = 0.9999
+
+                    if self.opt.rect_mask and self.opt.reg_3d_center:
+                        hm_3d[ignore_id, int(bbox[1]): int(bbox[3]) + 1,
+                        int(bbox[0]): int(bbox[2]) + 1] = 0.9999
+                    else:
+                        for cc in ignore_id:
+                            draw_gaussian(hm_3d[cc], ct, radius)
+                        hm_3d[ignore_id, ct_int[1], ct_int[0]] = 0.9999
+
                     continue
                 draw_gaussian(hm[cls_id], ct, radius)
+                if self.opt.reg_3d_center:
+                    draw_gaussian(hm_3d[cls_id], ct, radius)
 
                 alpha = ann['local_yaw']
                 if alpha <= 3 / 2 * np.pi:
@@ -188,6 +202,8 @@ class PKUDataset(data.Dataset):
             meta = {'c': c, 's': s, 'gt_det': gt_det, 'calib': calib,
                     'image_path': img_path, 'img_id': img_id}
             ret['meta'] = meta
+        if self.opt.reg_3d_center:
+            ret.update({'hm_3d': hm_3d})
 
         return ret
 

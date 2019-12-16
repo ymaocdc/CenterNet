@@ -20,7 +20,8 @@ class DddLoss(torch.nn.Module):
         self.crit = torch.nn.MSELoss() if opt.mse_loss else FocalLoss()
         self.crit_reg = L1Loss()
         self.crit_rot = BinRotLoss()
-        self.crit_pitch = BinRotLoss()
+        if opt.reg_pitch:
+            self.crit_pitch = BinRotLoss()
         self.opt = opt
 
     def forward(self, outputs, batch):
@@ -66,7 +67,9 @@ class DddLoss(torch.nn.Module):
 
         loss_stats = {'loss': loss, 'hm_loss': hm_loss, 'dep_loss': dep_loss,
                       'dim_loss': dim_loss, 'rot_loss': rot_loss,
-                      'wh_loss': wh_loss, 'off_loss': off_loss, 'pitch_loss': pitch_loss}
+                      'wh_loss': wh_loss, 'off_loss': off_loss}
+        if self.opt.reg_pitch:
+            loss_stats.update({'pitch_loss': pitch_loss})
         return loss, loss_stats
 
 
@@ -76,7 +79,9 @@ class PkuTrainer(BaseTrainer):
 
     def _get_losses(self, opt):
         loss_states = ['loss', 'hm_loss', 'dep_loss', 'dim_loss', 'rot_loss',
-                       'wh_loss', 'off_loss', 'pitch_loss']
+                       'wh_loss', 'off_loss']
+        if self.opt.reg_pitch:
+            loss_states = loss_states + ['pitch_loss']
         loss = DddLoss(opt)
         return loss_states, loss
 
