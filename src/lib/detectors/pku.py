@@ -62,11 +62,12 @@ class PkuDetector(BaseDetector):
             wh = output['wh'] if self.opt.reg_bbox else None
             reg = output['reg'] if self.opt.reg_offset else None
             pitch = output['pitch'] if self.opt.reg_pitch else None
+            reg_3d = output['reg_3d_ct'] if self.opt.reg_3d_center else None
             torch.cuda.synchronize()
             forward_time = time.time()
 
             dets = ddd_decode(output['hm'], output['rot'], output['dep'],
-                              output['dim'], wh=wh, reg=reg, K=self.opt.K, pitch=pitch)
+                              output['dim'], wh=wh, reg=reg, K=self.opt.K, pitch=pitch, reg_3d=reg_3d)
         if return_time:
             return output, dets, forward_time
         else:
@@ -106,5 +107,5 @@ class PkuDetector(BaseDetector):
         plt.imshow(image[:,:,::-1])
         plt.show()
         debugger.add_bird_view(
-            results, center_thresh=self.opt.vis_thresh, img_id='bird_pred')
+            results, self.opt, center_thresh=self.opt.vis_thresh, img_id='bird_pred')
         # debugger.show_all_imgs(pause=self.pause)

@@ -385,7 +385,7 @@ class Debugger(object):
             bbox, cat - 1, dets[cat][i, -1], 
             show_txt=show_txt, img_id=img_id)
 
-  def add_bird_view(self, dets, center_thresh=0.3, img_id='bird'):
+  def add_bird_view(self, dets, opt, center_thresh=0.3, img_id='bird'):
     bird_view = np.ones((self.out_size, self.out_size, 3), dtype=np.uint8) * 230
     for cat in dets:
       cl = (self.colors[cat - 1, 0, 0]).tolist()
@@ -395,7 +395,8 @@ class Debugger(object):
           dim = dets[cat][i, 5:8]
           loc  = dets[cat][i, 8:11]
           rot_y = dets[cat][i, 11]
-          rect = compute_box_3d(dim, loc, rot_y)[:4, [0, 2]]
+          pitch = dets[cat][i, 13] if opt.reg_pitch else None
+          rect = compute_box_3d(dim, loc, rot_y, pitch)[:4, [0, 2]]
           for k in range(4):
             rect[k] = self.project_3d_to_bird(rect[k])
             # cv2.circle(bird_view, (rect[k][0], rect[k][1]), 2, lc, -1)

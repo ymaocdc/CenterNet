@@ -24,7 +24,7 @@ def ddd_post_process_2d(dets, c, s, opt):
   # dets: batch x max_dets x dim
   # return 1-based class det list
   ret = []
-  include_wh = dets.shape[2] > 24
+  include_wh = 1
   for i in range(dets.shape[0]):
     top_preds = {}
     dets[i, :, :2] = transform_preds(
@@ -44,7 +44,18 @@ def ddd_post_process_2d(dets, c, s, opt):
             dets[i, inds, 15:17], c[i], s[i], (opt.output_w, opt.output_h))
           .astype(np.float32)], axis=1)
       if opt.reg_pitch:
-        top_preds[j + 1] = np.concatenate([get_alpha(dets[i, inds, 18:26])[:, np.newaxis].astype(np.float32)], axis=1)
+        top_preds[j + 1] = np.concatenate([top_preds[j + 1], get_alpha(dets[i, inds, 18:26])[:, np.newaxis].astype(np.float32)], axis=1)
+      else:
+        top_preds[j + 1] = np.concatenate(
+          [top_preds[j + 1], 0.0], axis=1)
+
+      if opt.reg_3d_center:
+        top_preds[j + 1] = np.concatenate(
+          [top_preds[j + 1], dets[i, inds, 26:28].astype(np.float32)], axis=1)
+      else:
+        top_preds[j + 1] = np.concatenate(
+          [top_preds[j + 1], [0, 0]], axis=1)
+
     ret.append(top_preds)
   return ret
 
@@ -58,6 +69,7 @@ def ddd_post_process_3d(dets, calibs, opt):
       preds[cls_ind] = []
       for j in range(len(dets[i][cls_ind])):
         center = dets[i][cls_ind][j][:2]
+
         score = dets[i][cls_ind][j][2]
         alpha = dets[i][cls_ind][j][3]
         depth = dets[i][cls_ind][j][4]
@@ -65,8 +77,13 @@ def ddd_post_process_3d(dets, calibs, opt):
         wh = dets[i][cls_ind][j][8:10]
         if opt.reg_pitch:
           pitch = dets[i][cls_ind][j][10]
-        locations, rotation_y = ddd2locrot(
-          center, alpha, dimensions, depth, calibs[0])
+        if opt.reg_3d_center:
+          center3d = dets[i][cls_ind][j][26:28]
+          locations, rotation_y = ddd2locrot(
+            center3d, alpha, dimensions, depth, calibs[0])
+        else:
+          locations, rotation_y = ddd2locrot(
+            center, alpha, dimensions, depth, calibs[0])
         bbox = [center[0] - wh[0] / 2, center[1] - wh[1] / 2,
                 center[0] + wh[0] / 2, center[1] + wh[1] / 2]
         pred = [alpha] + bbox + dimensions.tolist() + \

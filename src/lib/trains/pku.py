@@ -27,7 +27,7 @@ class DddLoss(torch.nn.Module):
     def forward(self, outputs, batch):
         opt = self.opt
 
-        hm_loss, dep_loss, rot_loss, dim_loss, pitch_loss = 0, 0, 0, 0, 0
+        hm_loss, dep_loss, rot_loss, dim_loss, pitch_loss, reg_3d_center_loss = 0, 0, 0, 0, 0, 0
         wh_loss, off_loss = 0, 0
         for s in range(opt.num_stacks):
             output = outputs[s]
@@ -59,17 +59,24 @@ class DddLoss(torch.nn.Module):
                 wh_loss += self.crit_reg(output['wh'], batch['rot_mask'],
                                          batch['ind'], batch['wh']) / opt.num_stacks
             if opt.reg_offset and opt.off_weight > 0:
-                off_loss += self.crit_reg(output['reg'], batch['rot_mask'],
+                off_loss += self.crit_reg(output['reg'], batch['reg_mask'],
                                           batch['ind'], batch['reg']) / opt.num_stacks
+            if opt.reg_3d_center and opt.reg_3d_center_weight > 0:
+                reg_3d_center_loss += self.crit_reg(output['reg_3d_ct'], batch['reg_3d_ct_mask'],
+                                          batch['ind'], batch['reg_3d_ct']) / opt.num_stacks
         loss = opt.hm_weight * hm_loss + opt.dep_weight * dep_loss + \
                opt.dim_weight * dim_loss + opt.rot_weight * rot_loss + \
-               opt.wh_weight * wh_loss + opt.off_weight * off_loss+ opt.pitch_weight * pitch_loss
+               opt.wh_weight * wh_loss + opt.off_weight * off_loss + opt.pitch_weight * pitch_loss + \
+               opt.reg_3d_center_weight*reg_3d_center_loss
+
 
         loss_stats = {'loss': loss, 'hm_loss': hm_loss, 'dep_loss': dep_loss,
                       'dim_loss': dim_loss, 'rot_loss': rot_loss,
                       'wh_loss': wh_loss, 'off_loss': off_loss}
         if self.opt.reg_pitch:
             loss_stats.update({'pitch_loss': pitch_loss})
+        if self.opt.reg_3d_center:
+            loss_stats.update({'reg_3d_center_loss': pitch_loss})
         return loss, loss_stats
 
 
@@ -82,6 +89,8 @@ class PkuTrainer(BaseTrainer):
                        'wh_loss', 'off_loss']
         if self.opt.reg_pitch:
             loss_states = loss_states + ['pitch_loss']
+        if self.opt.reg_3d_center:
+            loss_states = loss_states + ['reg_3d_center_loss']
         loss = DddLoss(opt)
         return loss_states, loss
 

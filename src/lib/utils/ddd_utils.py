@@ -12,8 +12,13 @@ def compute_box_3d(dim, location, rotation_y, pitch):
   # return: 8 x 3
   # rotation_y = rotation_y+np.pi/2
   c, s = np.cos(rotation_y), np.sin(rotation_y)
-  pitch = 0
-  roll = -pitch
+  if pitch is None:
+      pitch = 0
+      roll = -0.1
+  else:
+      roll = -pitch
+      pitch = 0
+
   Y = np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]], dtype=np.float32)
   P = np.array([[1, 0, 0],
                 [0, np.cos(pitch), -np.sin(pitch)],
