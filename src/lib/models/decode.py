@@ -453,22 +453,27 @@ def ddd_decode(heat, rot, depth, dim, wh=None, reg=None, K=40, pitch=None, reg_3
     if wh is not None:
         wh = _transpose_and_gather_feat(wh, inds)
         wh = wh.view(batch, K, 2)
-        detections = torch.cat(
-            [xs, ys, scores, rot, depth, dim, wh, clses], dim=2)
     else:
-        detections = torch.cat(
-            [xs, ys, scores, rot, depth, dim, clses], dim=2)
+        wh = torch.cuda.FloatTensor((batch, K, 2)).fill_(0)
+    detections = torch.cat(
+        [xs, ys, scores, rot, depth, dim, wh, clses], dim=2)
+
     if pitch is not None:
         pitch = _transpose_and_gather_feat(pitch, inds)
         pitch = pitch.view(batch, K, 8)
-        detections = torch.cat([detections, pitch], dim=2)
+    else:
+        pitch = torch.cuda.FloatTensor(batch, K, 8).fill_(0)
+    detections = torch.cat([detections, pitch], dim=2)
 
     if reg_3d is not None:
-      reg_3d = _transpose_and_gather_feat(reg_3d, inds)
-      reg_3d = reg_3d.view(batch, K, 2)
-      xs_3d = xs_t.view(batch, K, 1) + reg[:, :, 0:1]
-      ys_3d = ys_t.view(batch, K, 1) + reg[:, :, 1:2]
-      detections = torch.cat([detections, xs_3d, ys_3d], dim=2)
+        reg_3d = _transpose_and_gather_feat(reg_3d, inds)
+        reg_3d = reg_3d.view(batch, K, 2)
+        xs_3d = xs_t.view(batch, K, 1) + reg_3d[:, :, 0:1]
+        ys_3d = ys_t.view(batch, K, 1) + reg_3d[:, :, 1:2]
+    else:
+        xs_3d = torch.cuda.FloatTensor(batch, K, 1).fill_(0)
+        ys_3d = torch.cuda.FloatTensor(batch, K, 1).fill_(0)
+    detections = torch.cat([detections, xs_3d, ys_3d], dim=2)
 
     return detections
 

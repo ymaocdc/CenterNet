@@ -47,14 +47,14 @@ def ddd_post_process_2d(dets, c, s, opt):
         top_preds[j + 1] = np.concatenate([top_preds[j + 1], get_alpha(dets[i, inds, 18:26])[:, np.newaxis].astype(np.float32)], axis=1)
       else:
         top_preds[j + 1] = np.concatenate(
-          [top_preds[j + 1], 0.0], axis=1)
+          [top_preds[j + 1], np.zeros((top_preds[j + 1].shape[0], 1), dtype=np.float32)], axis=1)
 
       if opt.reg_3d_center:
         top_preds[j + 1] = np.concatenate(
           [top_preds[j + 1], dets[i, inds, 26:28].astype(np.float32)], axis=1)
       else:
         top_preds[j + 1] = np.concatenate(
-          [top_preds[j + 1], [0, 0]], axis=1)
+          [top_preds[j + 1], np.zeros((top_preds[j + 1].shape[0], 2), dtype=np.float32)], axis=1)
 
     ret.append(top_preds)
   return ret

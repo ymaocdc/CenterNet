@@ -7,6 +7,7 @@ import numpy as np
 from progress.bar import Bar
 import time
 import torch
+import matplotlib.pyplot as plt
 
 from models.decode import ddd_decode
 from models.utils import flip_tensor
@@ -102,10 +103,10 @@ class PkuDetector(BaseDetector):
         debugger.add_3d_detection(
             image, results, self.this_calib, self.opt,
             center_thresh=self.opt.vis_thresh, img_id='add_pred')
-        import matplotlib.pyplot as plt
-        fig = plt.figure(figsize=(10, 10))
-        plt.imshow(image[:,:,::-1])
-        plt.show()
+
+        # fig = plt.figure(figsize=(10, 10))
+        # plt.imshow(image[:,:,::-1])
+        # plt.show()
         debugger.add_bird_view(
             results, self.opt, center_thresh=self.opt.vis_thresh, img_id='bird_pred')
         # debugger.show_all_imgs(pause=self.pause)

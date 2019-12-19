@@ -10,7 +10,7 @@ import json
 import cv2
 import os
 import math
-
+import pandas as pd
 import torch.utils.data as data
 
 
@@ -23,7 +23,7 @@ class PKU(data.Dataset):
     def __init__(self, opt, split):
         super(PKU, self).__init__()
         self.data_dir = os.path.join(opt.data_dir)
-
+        self.root_dir = opt.root_dir
         # self.img_dir = os.path.join(self.data_dir, 'images')
         # if opt.trainval:
         #     split = 'trainval' if split == 'train' else 'test'
@@ -78,25 +78,34 @@ class PKU(data.Dataset):
     def convert_eval_format(self, all_bboxes):
         pass
 
+    def coords2str(self, coords, names=['yaw', 'pitch', 'roll', 'x', 'y', 'z', 'confidence']):
+        s = []
+        for c in coords:
+            s.append(str(c))
+        return ' '.join(s)
+
     def save_results(self, results, save_dir):
-        results_dir = os.path.join(save_dir, 'results')
-        if not os.path.exists(results_dir):
-            os.mkdir(results_dir)
+
+
+
+        predictions = []
+
         for img_id in results.keys():
-            out_path = os.path.join(results_dir, '{:06d}.txt'.format(img_id))
-            f = open(out_path, 'w')
             for cls_ind in results[img_id]:
                 for j in range(len(results[img_id][cls_ind])):
                     class_name = self.class_name[cls_ind]
-                    f.write('{} 0.0 0'.format(class_name))
-                    for i in range(len(results[img_id][cls_ind][j])):
-                        f.write(' {:.2f}'.format(results[img_id][cls_ind][j][i]))
-                    f.write('\n')
-            f.close()
+                    s = [results[img_id][cls_ind][j][11], -0.1, 0, results[img_id][cls_ind][j][8:11], results[img_id][cls_ind][j][12]]
+                    predictions.append(self.coords2str(s))
+
+        test = pd.read_csv( os.path.join(self.root_dir, 'sample_submission.csv'))
+        test['PredictionString'] = predictions
+        test.to_csv(os.path.join(self.root_dir, 'submission_trial.csv'), index=False)
+        test.head()
+
+
+
 
     def run_eval(self, results, save_dir):
         self.save_results(results, save_dir)
-        os.system('./tools/kitti_eval/evaluate_object_3d_offline ' + \
-                  '../data/kitti/training/label_val ' + \
-                  '{}/results/'.format(save_dir))
+
 

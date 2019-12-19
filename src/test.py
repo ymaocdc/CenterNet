@@ -107,7 +107,7 @@ def test(opt):
     else:
       ret = detector.run(img_path)
     
-    results[img_id] = ret['results']
+    results[img_info['file_name'].split('.j')[0]] = ret['results']
 
     Bar.suffix = '[{0}/{1}]|Tot: {total:} |ETA: {eta:} '.format(
                    ind, num_iters, total=bar.elapsed_td, eta=bar.eta_td)

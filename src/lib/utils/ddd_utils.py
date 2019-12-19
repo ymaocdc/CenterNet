@@ -14,7 +14,7 @@ def compute_box_3d(dim, location, rotation_y, pitch):
   c, s = np.cos(rotation_y), np.sin(rotation_y)
   if pitch is None:
       pitch = 0
-      roll = -0.1
+      roll = 0.1
   else:
       roll = -pitch
       pitch = 0
