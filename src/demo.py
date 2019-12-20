@@ -4,10 +4,11 @@ from __future__ import print_function
 
 import _init_paths
 
-import os
+import os, glob
 import cv2
 import pandas as pd
 from opts import opts
+import numpy as np
 from detectors.detector_factory import detector_factory
 
 image_ext = ['jpg', 'jpeg', 'png', 'webp']
@@ -52,32 +53,13 @@ def demo(opt):
     else:
       image_names = [opt.demo]
 
-    predictions = {}
     for (image_name) in image_names:
-        ret = detector.run(image_name)
-        time_str = ''
-        for stat in time_stats:
-            time_str = time_str + '{} {:.3f}s |'.format(stat, ret[stat])
-        print(time_str)
-        ret = ret['results']
-        predictions[image_name.split('/')[-1].split('.j')[0]] = []
-        for cls_ind in ret:
-            for j in range(len(ret[cls_ind])):
-                s = [ret[cls_ind][j][11], -0.1, 0, ret[cls_ind][j][8], ret[cls_ind][j][9], ret[cls_ind][j][10],
-                     ret[cls_ind][j][12]]
-                predictions[image_name.split('/')[-1].split('.j')[0]] += [coords2str(s)]
+      ret = detector.run(image_name)
+      time_str = ''
+      for stat in time_stats:
+        time_str = time_str + '{} {:.3f}s |'.format(stat, ret[stat])
+      print(time_str)
 
-    test = pd.read_csv(os.path.join(opt.root_dir, 'sample_submission.csv'))
-    test['PredictionString'] = predictions
-    test.to_csv(os.path.join(opt.root_dir, 'submission_trial.csv'), index=False)
-    test.head()
-
-    # for (image_name) in image_names:
-    #   ret = detector.run(image_name)
-    #   time_str = ''
-    #   for stat in time_stats:
-    #     time_str = time_str + '{} {:.3f}s |'.format(stat, ret[stat])
-    #   print(time_str)
 if __name__ == '__main__':
   opt = opts().init()
   demo(opt)

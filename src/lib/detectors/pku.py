@@ -85,7 +85,7 @@ class PkuDetector(BaseDetector):
         results = detections[0]
         for j in range(1, self.num_classes + 1):
             if len(results[j] > 0):
-                keep_inds = (results[j][:, -1] > self.opt.peak_thresh)
+                keep_inds = (results[j][:, 12] > self.opt.peak_thresh)
                 results[j] = results[j][keep_inds]
         return results
 
@@ -103,10 +103,10 @@ class PkuDetector(BaseDetector):
         debugger.add_3d_detection(
             image, results, self.this_calib, self.opt,
             center_thresh=self.opt.vis_thresh, img_id='add_pred')
-
-        # fig = plt.figure(figsize=(10, 10))
-        # plt.imshow(image[:,:,::-1])
-        # plt.show()
+        if self.opt.debug > 0:
+            fig = plt.figure(figsize=(10, 10))
+            plt.imshow(image[:,:,::-1])
+            plt.show()
         debugger.add_bird_view(
             results, self.opt, center_thresh=self.opt.vis_thresh, img_id='bird_pred')
         # debugger.show_all_imgs(pause=self.pause)

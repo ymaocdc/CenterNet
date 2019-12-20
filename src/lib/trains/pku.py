@@ -41,27 +41,27 @@ class DddLoss(torch.nn.Module):
                     opt.output_w, opt.output_h)).to(opt.device)
 
             hm_loss += self.crit(output['hm'], batch['hm']) / opt.num_stacks
-            if opt.dep_weight > 0:
+            if opt.dep_weight >= 0:
                 dep_loss += self.crit_reg(output['dep'], batch['reg_mask'],
                                           batch['ind'], batch['dep']) / opt.num_stacks
-            if opt.dim_weight > 0:
+            if opt.dim_weight >= 0:
                 dim_loss += self.crit_reg(output['dim'], batch['reg_mask'],
                                           batch['ind'], batch['dim']) / opt.num_stacks
-            if opt.rot_weight > 0:
+            if opt.rot_weight >=0:
                 rot_loss += self.crit_rot(output['rot'], batch['rot_mask'],
                                           batch['ind'], batch['rotbin'],
                                           batch['rotres']) / opt.num_stacks
-            if opt.pitch_weight > 0 and opt.reg_pitch:
+            if opt.pitch_weight >= 0 and opt.reg_pitch:
                 pitch_loss += self.crit_rot(output['pitch'], batch['pitch_mask'],
                                           batch['ind'], batch['pitchbin'],
                                           batch['pitchres']) / opt.num_stacks
-            if opt.reg_bbox and opt.wh_weight > 0:
+            if opt.reg_bbox and opt.wh_weight >= 0:
                 wh_loss += self.crit_reg(output['wh'], batch['rot_mask'],
                                          batch['ind'], batch['wh']) / opt.num_stacks
-            if opt.reg_offset and opt.off_weight > 0:
+            if opt.reg_offset and opt.off_weight >= 0:
                 off_loss += self.crit_reg(output['reg'], batch['reg_mask'],
                                           batch['ind'], batch['reg']) / opt.num_stacks
-            if opt.reg_3d_center and opt.reg_3d_center_weight > 0:
+            if opt.reg_3d_center and opt.reg_3d_center_weight >= 0:
                 reg_3d_center_loss += self.crit_reg(output['reg_3d_ct'], batch['reg_3d_ct_mask'],
                                           batch['ind'], batch['reg_3d_ct']) / opt.num_stacks
         loss = opt.hm_weight * hm_loss + opt.dep_weight * dep_loss + \

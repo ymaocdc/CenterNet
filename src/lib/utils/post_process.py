@@ -27,9 +27,18 @@ def ddd_post_process_2d(dets, c, s, opt):
   include_wh = 1
   for i in range(dets.shape[0]):
     top_preds = {}
+
+    xymin = dets[i, :, :2] - dets[i, :, 15:17]/2
+    xymax = dets[i, :, :2] + dets[i, :, 15:17]/2
+
     dets[i, :, :2] = transform_preds(
-          dets[i, :, 0:2], c[i], s[i], (opt.output_w, opt.output_h))
-    classes = dets[i, :, -1]
+          xymin, c[i], s[i], (opt.output_w, opt.output_h))
+    dets[i, :, 15:17] = transform_preds(
+      xymax, c[i], s[i], (opt.output_w, opt.output_h))
+    dets[i, :, 26:28] = transform_preds(
+      dets[i, :, 26:28], c[i], s[i], (opt.output_w, opt.output_h))
+
+    classes = dets[i, :, 17]
     for j in range(opt.num_classes):
       inds = (classes == j)
       top_preds[j + 1] = np.concatenate([
@@ -40,9 +49,7 @@ def ddd_post_process_2d(dets, c, s, opt):
       if include_wh:
         top_preds[j + 1] = np.concatenate([
           top_preds[j + 1],
-          transform_preds(
-            dets[i, inds, 15:17], c[i], s[i], (opt.output_w, opt.output_h))
-          .astype(np.float32)], axis=1)
+          dets[i, inds, 15:17].astype(np.float32)], axis=1)
       if opt.reg_pitch:
         top_preds[j + 1] = np.concatenate([top_preds[j + 1], get_alpha(dets[i, inds, 18:26])[:, np.newaxis].astype(np.float32)], axis=1)
       else:
@@ -68,17 +75,17 @@ def ddd_post_process_3d(dets, calibs, opt):
     for cls_ind in dets[i].keys():
       preds[cls_ind] = []
       for j in range(len(dets[i][cls_ind])):
-        center = dets[i][cls_ind][j][:2]
+        center = (dets[i][cls_ind][j][:2] + dets[i][cls_ind][j][8:10])/2
 
         score = dets[i][cls_ind][j][2]
         alpha = dets[i][cls_ind][j][3]
         depth = dets[i][cls_ind][j][4]
         dimensions = dets[i][cls_ind][j][5:8]
-        wh = dets[i][cls_ind][j][8:10]
+        wh = -dets[i][cls_ind][j][:2] + dets[i][cls_ind][j][8:10]
         if opt.reg_pitch:
           pitch = dets[i][cls_ind][j][10]
         if opt.reg_3d_center:
-          center3d = dets[i][cls_ind][j][26:28]
+          center3d = dets[i][cls_ind][j][11:13]
           locations, rotation_y = ddd2locrot(
             center3d, alpha, dimensions, depth, calibs[0])
         else:
@@ -90,6 +97,8 @@ def ddd_post_process_3d(dets, calibs, opt):
                locations.tolist() + [rotation_y, score]
         if opt.reg_pitch:
           pred = pred + [pitch]
+        else:
+          pred = pred + [None]
         preds[cls_ind].append(pred)
       preds[cls_ind] = np.array(preds[cls_ind], dtype=np.float32)
     ret.append(preds)

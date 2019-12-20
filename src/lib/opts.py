@@ -348,6 +348,8 @@ class opts(object):
         opt.heads.update({'reg': 2})
       if opt.reg_pitch:
           opt.heads.update({'pitch': 8})
+      if opt.reg_3d_center:
+          opt.heads.update({'reg_3d_ct': 2})
     else:
       assert 0, 'task not defined!'
     print('heads', opt.heads)

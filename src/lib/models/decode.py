@@ -462,7 +462,7 @@ def ddd_decode(heat, rot, depth, dim, wh=None, reg=None, K=40, pitch=None, reg_3
         pitch = _transpose_and_gather_feat(pitch, inds)
         pitch = pitch.view(batch, K, 8)
     else:
-        pitch = torch.cuda.FloatTensor(batch, K, 8).fill_(0)
+        pitch = torch.cuda.FloatTensor(batch, K, 8).fill_(None)
     detections = torch.cat([detections, pitch], dim=2)
 
     if reg_3d is not None:

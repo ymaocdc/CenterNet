@@ -185,7 +185,7 @@ class Debugger(object):
     font = cv2.FONT_HERSHEY_SIMPLEX
     cat_size = cv2.getTextSize(txt, font, 0.5, 2)[0]
     cv2.rectangle(
-      self.imgs[img_id], (bbox[0], bbox[1]), (bbox[2], bbox[3]), c, 2)
+      self.imgs[img_id], (bbox[0], bbox[1]), (bbox[2], bbox[3]), c, 3)
     if show_txt:
       cv2.rectangle(self.imgs[img_id],
                     (bbox[0], bbox[1] - cat_size[1] - 2),
@@ -323,11 +323,15 @@ class Debugger(object):
     for cat in dets:
       for i in range(len(dets[cat])):
         cl = (self.colors[cat - 1, 0, 0]).tolist()
-        if dets[cat][i, -1] > center_thresh:
+        if dets[cat][i, 12] > center_thresh:
           dim = dets[cat][i, 5:8]
           loc  = dets[cat][i, 8:11]
           rot_y = dets[cat][i, 11]
           bbox = dets[cat][i, 1:5]
+
+          # centroid_3d = np.array(loc, dtype=np.float32).reshape(1, 3)
+          # centroid_2d = project_to_image(centroid_3d, calib)[0]
+          # cv2.circle(self.imgs[img_id], tuple([centroid_2d[0], centroid_2d[1]]), 10, (0, 255, 0), -1)
 
           pitch = dets[cat][i, 13] if opt.reg_pitch else None
           # loc[1] = loc[1] - dim[0] / 2 + dim[0] / 2 / self.dim_scale
@@ -339,9 +343,9 @@ class Debugger(object):
             self.add_coco_bbox(
                 bbox, cat - 1, dets[cat][i, 12],
                 show_txt=show_txt, img_id=img_id)
-            # import matplotlib.pyplot as plt
-            # plt.imshow(self.imgs[img_id][:,:,::-1])
-            # plt.show()
+          # import matplotlib.pyplot as plt
+          # plt.imshow(self.imgs[img_id][:,:,::-1])
+          # plt.show()
 
 
   def compose_vis_add(
