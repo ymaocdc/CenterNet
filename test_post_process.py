@@ -324,8 +324,8 @@ if __name__ == "__main__":
 
         img_name = train.loc[id]['ImageId']
         pred_string = train.loc[id]['PredictionString']
-        if not img_name == 'ID_001a12fb2':
-            continue
+        # if not img_name == 'ID_001a12fb2':
+        #     continue
         # if os.path.exists(os.path.join(output_folder, img_name + '.json')):
         #     continue
 
@@ -343,8 +343,8 @@ if __name__ == "__main__":
         #     center, alpha, dim, depth, calib)
         # # rot_y = -np.pi / 4 * 3
         #
-        # # dim = [153.69274773216807, 60.897463964838835, 4.80898011]
-        # # loc = [5,5,20]
+        dim = [153.69274773216807, 60.897463964838835, 4.80898011]
+        loc = [5,5,20]
         # rot_y = -np.pi/4
         # box_3d = compute_box_3d(dim, loc, rot_y, 0)
         # box_2d = project_to_image(box_3d, calib)
@@ -357,41 +357,43 @@ if __name__ == "__main__":
         #
         #
         #
-        # img = image.copy()
-        # yaw = -(rot_y+np.pi/2)
-        # yaw = 0
-        # pitch = 0
-        # roll = 0
-        # x, y, z = loc
-        # x_l, y_l, z_l = dim
-        # Rt = np.eye(4)
-        # t = np.array([x, y, z])
-        # Rt[:3, 3] = t
-        # Rt[:3, :3] = euler_to_Rot(yaw, pitch, roll).T
-        # Rt = Rt[:3, :]
-        # P = np.array([[0, 0, 0, 1],
-        #               [x_l, y_l, -z_l, 1],
-        #               [x_l, y_l, z_l, 1],
-        #               [-x_l, y_l, z_l, 1],
-        #               [-x_l, y_l, -z_l, 1],
-        #               [x_l, -y_l, -z_l, 1],
-        #               [x_l, -y_l, z_l, 1],
-        #               [-x_l, -y_l, z_l, 1],
-        #               [-x_l, -y_l, -z_l, 1]]).T
-        # img_cor_points = np.dot(k, np.dot(Rt, P))
-        # img_cor_points = img_cor_points.T
-        # img_cor_points[:, 0] /= img_cor_points[:, 2]
-        # img_cor_points[:, 1] /= img_cor_points[:, 2]
-        # # call this function before chage the dtype
-        # # img_cor_2_world_cor()
-        # img_cor_points = img_cor_points.astype(int)
-        #
-        # img = draw_line(img, img_cor_points)
-        # img = draw_points(img, img_cor_points)
-        #
-        # plt.figure(figsize=(10, 10))
-        # plt.imshow(img[:, :, ::-1])
-        # plt.show()
+        img = image.copy()
+        loc = [0, 0, 20]
+        dim = [2.0, 1.0, 4.0]
+        yaw = 0
+        pitch = 0
+        roll = np.pi/4
+        x, y, z = loc
+        x_l, y_l, z_l = dim
+        Rt = np.eye(4)
+        t = np.array([x, y, z])
+        Rt[:3, 3] = t
+        Rt[:3, :3] = euler_to_Rot(yaw, pitch, roll).T
+        Rt = Rt[:3, :]
+        P = np.array([[0, 0, 0, 1],
+                      [x_l, y_l, -z_l, 1],
+                      [x_l, y_l, z_l, 1],
+                      [-x_l, y_l, z_l, 1],
+                      [-x_l, y_l, -z_l, 1],
+                      [x_l, -y_l, -z_l, 1],
+                      [x_l, -y_l, z_l, 1],
+                      [-x_l, -y_l, z_l, 1],
+                      [-x_l, -y_l, -z_l, 1]]).T
+        img_cor_points = np.dot(k, np.dot(Rt, P))
+        img_cor_points = img_cor_points.T
+        img_cor_points[:, 0] /= img_cor_points[:, 2]
+        img_cor_points[:, 1] /= img_cor_points[:, 2]
+        # call this function before chage the dtype
+        # img_cor_2_world_cor()
+        img_cor_points = img_cor_points.astype(int)
+
+        img = draw_line(img, img_cor_points)
+        img = draw_points(img, img_cor_points)
+
+        plt.figure(figsize=(10, 10))
+        plt.imshow(img[:, :, ::-1])
+        plt.show()
+        aaa=1
         #
         #
         #

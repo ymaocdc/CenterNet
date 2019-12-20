@@ -68,6 +68,9 @@ class PKUDataset(data.Dataset):
         if self.opt.reg_3d_center:
             reg_3d_ct = np.zeros((self.max_objs, 2), dtype=np.float32)
             reg_3d_ct_mask = np.zeros((self.max_objs), dtype=np.uint8)
+        if self.opt.reg_pitch:
+            reg_pitch = np.zeros((self.max_objs, 2), dtype=np.float32)
+            reg_pitch_mask = np.zeros((self.max_objs), dtype=np.uint8)
         hm = np.zeros(
             (num_classes, self.opt.output_h, self.opt.output_w), dtype=np.float32)
         wh = np.zeros((self.max_objs, 2), dtype=np.float32)
@@ -75,13 +78,12 @@ class PKUDataset(data.Dataset):
         dep = np.zeros((self.max_objs, 1), dtype=np.float32)
         rotbin = np.zeros((self.max_objs, 2), dtype=np.int64)
         rotres = np.zeros((self.max_objs, 2), dtype=np.float32)
-        pitchbin = np.zeros((self.max_objs, 2), dtype=np.int64)
-        pitchres = np.zeros((self.max_objs, 2), dtype=np.float32)
+
         dim = np.zeros((self.max_objs, 3), dtype=np.float32)
         ind = np.zeros((self.max_objs), dtype=np.int64)
         reg_mask = np.zeros((self.max_objs), dtype=np.uint8)
         rot_mask = np.zeros((self.max_objs), dtype=np.uint8)
-        pitch_mask = np.zeros((self.max_objs), dtype=np.uint8)
+
 
         ann_ids = self.coco.getAnnIds(imgIds=[img_id])
         anns = self.coco.loadAnns(ids=ann_ids)
@@ -130,10 +132,10 @@ class PKUDataset(data.Dataset):
                 draw_gaussian(hm[cls_id], ct, radius)
 
                 alpha = ann['local_yaw']
-                if alpha <= 3 / 2 * np.pi:
-                    alpha = alpha - np.pi / 2
-                else:
-                    alpha = -(np.pi * 2 - alpha + np.pi / 2)
+                # if alpha <= 3 / 2 * np.pi:
+                #     alpha = alpha - np.pi / 2
+                # else:
+                #     alpha = -(np.pi * 2 - alpha + np.pi / 2)
 
                 wh[k] = 1. * w, 1. * h
                 gt_det.append([ct[0], ct[1], 1] + \
@@ -147,34 +149,23 @@ class PKUDataset(data.Dataset):
 
                 # if (not self.opt.car_only) or cls_id == 1: # Only estimate ADD for cars !!!
                 if 1:
-                    alpha = self._convert_alpha(alpha)
+                    # alpha = self._convert_alpha(alpha)
                     # print('img_id cls_id alpha rot_y', img_path, cls_id, alpha, ann['rotation_y'])
-                    if alpha < np.pi / 6. or alpha > 5 * np.pi / 6.:
+                    if alpha < np.pi/2+np.pi/6. or alpha > np.pi/2*3-np.pi/6:
                         rotbin[k, 0] = 1
-                        rotres[k, 0] = alpha - (-0.5 * np.pi)
-                    if alpha > -np.pi / 6. or alpha < -5 * np.pi / 6.:
+                        rotres[k, 0] = alpha
+                    if alpha < np.pi/2-np.pi/6. or alpha < np.pi/2*3+np.pi/6:
                         rotbin[k, 1] = 1
-                        rotres[k, 1] = alpha - (0.5 * np.pi)
+                        rotres[k, 1] = alpha
                     if self.opt.reg_pitch:
                         pitch = ann['pitch']
-                        if pitch <= 3 / 2 * np.pi:
-                            pitch = pitch - np.pi / 2
-                        else:
-                            pitch = -(np.pi * 2 - pitch + np.pi / 2)
-
-                        pitch = self._convert_alpha(pitch)
-                        if pitch < np.pi / 6. or pitch > 5 * np.pi / 6.:
-                            pitchbin[k, 0] = 1
-                            pitchres[k, 0] = pitch - (-0.5 * np.pi)
-                        if pitch > -np.pi / 6. or pitch < -5 * np.pi / 6.:
-                            pitchbin[k, 1] = 1
-                            pitchres[k, 1] = pitch - (0.5 * np.pi)
-                        pitch_mask[k] = 1
+                        reg_pitch[k] = -0.15-pitch
+                        reg_pitch_mask[k] = 1
 
                     # {'SUV': {'W': 2.10604523, 'H': 1.67994469, 'L': 4.73350861},
                     #  '2x': {'W': 1.81794264, 'H': 1.47786305, 'L': 4.49547776},
                     #  '3x': {'W': 2.02599449, 'H': 1.4570455199999999, 'L': 4.82244445}}
-                    dep[k] = ann['3D_location'][3]
+                    dep[k] = ann['3D_location'][2]
                     dim[k] = ann['3D_dimension']
                     # print('        cat dim', cls_id, dim[k])
                     ind[k] = ct_int[1] * self.opt.output_w + ct_int[0]
@@ -192,7 +183,7 @@ class PKUDataset(data.Dataset):
                'rotbin': rotbin, 'rotres': rotres, 'reg_mask': reg_mask,
                'rot_mask': rot_mask}
         if self.opt.reg_pitch:
-            ret.update({'pitchbin': pitchbin, 'pitchres': pitchres, 'pitch_mask': pitch_mask})
+            ret.update({'reg_pitch': reg_pitch, 'reg_pitch_mask': reg_pitch_mask})
         if self.opt.reg_3d_center:
             ret.update({'reg_3d_ct': reg_3d_ct, 'reg_3d_ct_mask': reg_3d_ct_mask})
         if self.opt.reg_bbox:

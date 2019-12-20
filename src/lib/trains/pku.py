@@ -52,9 +52,8 @@ class DddLoss(torch.nn.Module):
                                           batch['ind'], batch['rotbin'],
                                           batch['rotres']) / opt.num_stacks
             if opt.pitch_weight >= 0 and opt.reg_pitch:
-                pitch_loss += self.crit_rot(output['pitch'], batch['pitch_mask'],
-                                          batch['ind'], batch['pitchbin'],
-                                          batch['pitchres']) / opt.num_stacks
+                pitch_loss += self.crit_reg(output['reg_pitch'], batch['reg_pitch_mask'],
+                                          batch['ind'], batch['reg_pitch']) / opt.num_stacks
             if opt.reg_bbox and opt.wh_weight >= 0:
                 wh_loss += self.crit_reg(output['wh'], batch['rot_mask'],
                                          batch['ind'], batch['wh']) / opt.num_stacks
@@ -74,7 +73,7 @@ class DddLoss(torch.nn.Module):
                       'dim_loss': dim_loss, 'rot_loss': rot_loss,
                       'wh_loss': wh_loss, 'off_loss': off_loss}
         if self.opt.reg_pitch:
-            loss_stats.update({'pitch_loss': pitch_loss})
+            loss_stats.update({'reg_pitch_loss': pitch_loss})
         if self.opt.reg_3d_center:
             loss_stats.update({'reg_3d_center_loss': pitch_loss})
         return loss, loss_stats
@@ -88,7 +87,7 @@ class PkuTrainer(BaseTrainer):
         loss_states = ['loss', 'hm_loss', 'dep_loss', 'dim_loss', 'rot_loss',
                        'wh_loss', 'off_loss']
         if self.opt.reg_pitch:
-            loss_states = loss_states + ['pitch_loss']
+            loss_states = loss_states + ['reg_pitch_loss']
         if self.opt.reg_3d_center:
             loss_states = loss_states + ['reg_3d_center_loss']
         loss = DddLoss(opt)

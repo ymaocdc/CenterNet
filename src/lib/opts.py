@@ -347,7 +347,7 @@ class opts(object):
       if opt.reg_offset:
         opt.heads.update({'reg': 2})
       if opt.reg_pitch:
-          opt.heads.update({'pitch': 8})
+          opt.heads.update({'reg_pitch': 1})
       if opt.reg_3d_center:
           opt.heads.update({'reg_3d_ct': 2})
     else:

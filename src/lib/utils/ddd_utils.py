@@ -16,7 +16,10 @@ def compute_box_3d(dim, location, rotation_y, pitch):
       pitch = 0
       roll = 0.1
   else:
-      roll = -(pitch+np.pi/2)
+      if rotation_y < 0:
+        roll = -(pitch+np.pi/2)
+      else:
+        roll = (pitch+np.pi/2)
       pitch = 0
 
   Y = np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]], dtype=np.float32)
@@ -28,8 +31,8 @@ def compute_box_3d(dim, location, rotation_y, pitch):
                 [0, 0, 1]], dtype=np.float32)
   l, w, h = dim[2], dim[1], dim[0]
   x_corners = [l/2, l/2, -l/2, -l/2, l/2, l/2, -l/2, -l/2]
-  y_corners = [0,0,0,0,-h,-h,-h,-h]
-  # y_corners = [-h/2, -h/2, -h/2, -h/2, h/2, h/2, h/2, h/2]
+  # y_corners = [0,0,0,0,-h,-h,-h,-h]
+  y_corners = [h/2, h/2, h/2, h/2, -h/2, -h/2, -h/2, -h/2]
   z_corners = [w/2, -w/2, -w/2, w/2, w/2, -w/2, -w/2, w/2]
 
   corners = np.array([x_corners, y_corners, z_corners], dtype=np.float32)
@@ -121,7 +124,7 @@ def rot_y2alpha(rot_y, x, cx, fx):
 def ddd2locrot(center, alpha, dim, depth, calib):
   # single image
   locations = unproject_2d_to_3d(center, depth, calib)
-  locations[1] += dim[0] / 2
+  # locations[1] += dim[0] / 2
   rotation_y = alpha2rot_y(alpha, center[0], calib[0, 2], calib[0, 0])
   return locations, rotation_y
 
