@@ -173,7 +173,7 @@ class Debugger(object):
       cv2.circle(self.imgs[img_id], (rect1[0], rect2[1]), int(10 * conf), c, 1)
       cv2.circle(self.imgs[img_id], (rect2[0], rect1[1]), int(10 * conf), c, 1)
 
-  def add_coco_bbox(self, bbox, cat, conf=1, show_txt=True, img_id='default'): 
+  def add_coco_bbox(self, bbox, cat, conf=1, show_txt=True, img_id='default', BPE=None):
     bbox = np.array(bbox, dtype=np.int32)
     # cat = (int(cat) + 1) % 80
     cat = int(cat)
@@ -186,6 +186,13 @@ class Debugger(object):
     cat_size = cv2.getTextSize(txt, font, 0.5, 2)[0]
     cv2.rectangle(
       self.imgs[img_id], (bbox[0], bbox[1]), (bbox[2], bbox[3]), c, 3)
+    if BPE is not None:
+        cv2.line(self.imgs[img_id], (int(BPE[0]),  bbox[1]),
+                 (int(BPE[0]),  bbox[3]), (0, 0, 255),2,
+                 lineType=cv2.LINE_AA)
+        cv2.line(self.imgs[img_id], (int(BPE[1]), bbox[1]),
+                 (int(BPE[1]), bbox[3]), (255, 0, 0),2,
+                 lineType=cv2.LINE_AA)
     if show_txt:
       cv2.rectangle(self.imgs[img_id],
                     (bbox[0], bbox[1] - cat_size[1] - 2),
@@ -334,15 +341,16 @@ class Debugger(object):
           # cv2.circle(self.imgs[img_id], tuple([centroid_2d[0], centroid_2d[1]]), 10, (0, 255, 0), -1)
 
           pitch = dets[cat][i, 13] if opt.reg_pitch else None
+          BPE = dets[cat][i, 14:16] if opt.reg_BPE else None
           # loc[1] = loc[1] - dim[0] / 2 + dim[0] / 2 / self.dim_scale
           # dim = dim / self.dim_scale
-          if loc[2] > 1:
-            box_3d = compute_box_3d(dim, loc, rot_y, pitch)
-            box_2d = project_to_image(box_3d, calib)
-            self.imgs[img_id] = draw_box_3d(self.imgs[img_id], box_2d, cl)
-            self.add_coco_bbox(
-                bbox, cat - 1, dets[cat][i, 12],
-                show_txt=show_txt, img_id=img_id)
+          # if loc[2] > 1:
+          #   box_3d = compute_box_3d(dim, loc, rot_y, pitch)
+          #   box_2d = project_to_image(box_3d, calib)
+          #   self.imgs[img_id] = draw_box_3d(self.imgs[img_id], box_2d, cl)
+          self.add_coco_bbox(
+            bbox, cat - 1, dets[cat][i, 12],
+            show_txt=show_txt, img_id=img_id, BPE=BPE)
           # import matplotlib.pyplot as plt
           # plt.imshow(self.imgs[img_id][:,:,::-1])
           # plt.show()

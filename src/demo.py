@@ -54,6 +54,8 @@ def demo(opt):
       image_names = [opt.demo]
 
     for (image_name) in image_names:
+      if not 'ID_0ad448f58.jpg' in image_name:
+          continue
       ret = detector.run(image_name)
       time_str = ''
       for stat in time_stats:

@@ -62,14 +62,14 @@ class PkuDetector(BaseDetector):
             output['dep'] = 1. / (output['dep'].sigmoid() + 1e-6) - 1.
             wh = output['wh'] if self.opt.reg_bbox else None
             reg = output['reg'] if self.opt.reg_offset else None
-            pitch = output['pitch'] if self.opt.reg_pitch else None
+            pitch = output['reg_pitch'] if self.opt.reg_pitch else None
             reg_3d = output['reg_3d_ct'] if self.opt.reg_3d_center else None
             reg_BPE = output['reg_BPE'] if self.opt.reg_BPE else None
             torch.cuda.synchronize()
             forward_time = time.time()
 
             dets = ddd_decode(output['hm'], output['rot'], output['dep'],
-                              output['dim'], wh=wh, reg=reg, K=self.opt.K, pitch=pitch, reg_3d=reg_3d)
+                              output['dim'], wh=wh, reg=reg, K=self.opt.K, pitch=pitch, reg_3d=reg_3d, reg_BPE=reg_BPE)
         if return_time:
             return output, dets, forward_time
         else:

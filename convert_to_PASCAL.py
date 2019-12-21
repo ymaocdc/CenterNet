@@ -60,7 +60,9 @@ assert len(im_files) == len(label_files)
 annotations["images"] = []
 annotations["annotations"] = []
 num_obj = 0
-for image_id, im_file in enumerate(im_files[:10]):
+for image_id, im_file in enumerate(im_files):
+    if not 'ID_0ad448f58' in im_file:
+        continue
     width = 3384
     height = 2710
     file_name = im_file.split('/')[-1]
@@ -100,13 +102,13 @@ for image_id, im_file in enumerate(im_files[:10]):
                 'roll': obj['roll'],
                 'global_yaw': obj['global_yaw'],
                 '3D_dimension': obj['3D_dimension'],
-                'BPE': [obj['BPE_left'][0], obj['BPE_right'][1]],
-                'FPE': [obj['FPE_left'][0], obj['FPE_right'][1]],
+                'BPE': [obj['BPE_left'][0], obj['BPE_right'][0]],
+                'FPE': [obj['FPE_left'][0], obj['FPE_right'][0]],
                 '3D_location': obj['3D_location']
             }
         )
         num_obj = num_obj + 1
 
-json_path = os.path.join(root_folder, '{}_coco_format_with_mask'.format(mode)+".json")
+json_path = os.path.join(root_folder, '{}_coco_format_overfit'.format(mode)+".json")
 with open(json_path, "w") as f:
     json.dump(annotations, f,cls=NumpyEncoder)

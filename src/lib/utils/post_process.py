@@ -35,8 +35,16 @@ def ddd_post_process_2d(dets, c, s, opt):
           xymin, c[i], s[i], (opt.output_w, opt.output_h))
     dets[i, :, 15:17] = transform_preds(
       xymax, c[i], s[i], (opt.output_w, opt.output_h))
-    dets[i, :, 26:28] = transform_preds(
-      dets[i, :, 26:28], c[i], s[i], (opt.output_w, opt.output_h))
+    dets[i, :, 19:21] = transform_preds(
+      dets[i, :, 19:21], c[i], s[i], (opt.output_w, opt.output_h))
+
+    lbpe = transform_preds(
+        np.array([dets[i, :, 21], xymax[:, 1]], dtype=np.float).transpose(), c[i], s[i], (opt.output_w, opt.output_h))
+    rbpe = transform_preds(
+        np.array([dets[i, :, 22], xymax[:, 1]], dtype=np.float).transpose(), c[i], s[i], (opt.output_w, opt.output_h))
+    dets[i, :, 21] = lbpe[:, 0]
+    dets[i, :, 22] = rbpe[:, 0]
+
 
     classes = dets[i, :, 17]
     for j in range(opt.num_classes):
@@ -51,14 +59,22 @@ def ddd_post_process_2d(dets, c, s, opt):
           top_preds[j + 1],
           dets[i, inds, 15:17].astype(np.float32)], axis=1)
       if opt.reg_pitch:
-        top_preds[j + 1] = np.concatenate([top_preds[j + 1], get_alpha(dets[i, inds, 18:26])[:, np.newaxis].astype(np.float32)], axis=1)
+        top_preds[j + 1] = np.concatenate([top_preds[j + 1], dets[i, inds, 18][:, np.newaxis].astype(np.float32)], axis=1)
       else:
         top_preds[j + 1] = np.concatenate(
           [top_preds[j + 1], np.zeros((top_preds[j + 1].shape[0], 1), dtype=np.float32)], axis=1)
 
       if opt.reg_3d_center:
         top_preds[j + 1] = np.concatenate(
-          [top_preds[j + 1], dets[i, inds, 26:28].astype(np.float32)], axis=1)
+          [top_preds[j + 1], dets[i, inds, 19:21].astype(np.float32)], axis=1)
+      else:
+        top_preds[j + 1] = np.concatenate(
+          [top_preds[j + 1], np.zeros((top_preds[j + 1].shape[0], 2), dtype=np.float32)], axis=1)
+
+
+      if opt.reg_BPE:
+        top_preds[j + 1] = np.concatenate(
+          [top_preds[j + 1], dets[i, inds, 21:23].astype(np.float32)], axis=1)
       else:
         top_preds[j + 1] = np.concatenate(
           [top_preds[j + 1], np.zeros((top_preds[j + 1].shape[0], 2), dtype=np.float32)], axis=1)
@@ -99,6 +115,13 @@ def ddd_post_process_3d(dets, calibs, opt):
           pred = pred + [pitch]
         else:
           pred = pred + [None]
+
+        if opt.reg_BPE:
+          BPE = dets[i][cls_ind][j][13:15]
+          pred = pred + BPE.tolist()
+        else:
+          pred = pred + [None]
+
         preds[cls_ind].append(pred)
       preds[cls_ind] = np.array(preds[cls_ind], dtype=np.float32)
     ret.append(preds)

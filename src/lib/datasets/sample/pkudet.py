@@ -156,7 +156,7 @@ class PKUDataset(data.Dataset):
                 if self.opt.reg_pitch:
                     pitch = ann['pitch']
                     reg_pitch[k] = -0.15-pitch
-                    reg_pitch_mask[k] = 1
+                    reg_pitch_mask[k] = 1 if not aug else 0
                     gt_det[-1] = gt_det[-1] + [reg_pitch[k][0]]
 
                 if self.opt.reg_3d_center:
@@ -165,12 +165,12 @@ class PKUDataset(data.Dataset):
                     ct_3d = np.array(projected_3D_center, dtype=np.float32)
                     ct_3d_int = ct_3d.astype(np.int32)
                     reg_3d_ct[k] = ct - ct_3d
-                    reg_3d_ct_mask[k] = 1
+                    reg_3d_ct_mask[k] = 1 if not aug else 0
                     gt_det[-1] = gt_det[-1] + [ct_3d[0], ct_3d[1], 1]
 
                 if self.opt.reg_BPE:
-                    reg_BPE[k]  = np.array([ct[0] - BPE[0], ct[0] - BPE[1]], dtype=np.float32)
-                    reg_BPE_mask[k] = 1
+                    reg_BPE[k] = np.array([ct[0] - BPE[0], ct[0] - BPE[1]], dtype=np.float32)
+                    reg_BPE_mask[k] = 1 if not aug else 0
                     gt_det[-1] = gt_det[-1] + [ct[0] - BPE[0], ct[0] - BPE[1]]
 
 

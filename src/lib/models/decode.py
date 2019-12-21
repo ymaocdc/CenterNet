@@ -423,7 +423,7 @@ def exct_decode(
 
     return detections
 
-def ddd_decode(heat, rot, depth, dim, wh=None, reg=None, K=40, pitch=None, reg_3d=None):
+def ddd_decode(heat, rot, depth, dim, wh=None, reg=None, K=40, pitch=None, reg_3d=None, reg_BPE=None):
     batch, cat, height, width = heat.size()
     # heat = torch.sigmoid(heat)
     # perform nms on heatmaps
@@ -460,9 +460,10 @@ def ddd_decode(heat, rot, depth, dim, wh=None, reg=None, K=40, pitch=None, reg_3
 
     if pitch is not None:
         pitch = _transpose_and_gather_feat(pitch, inds)
-        pitch = pitch.view(batch, K, 8)
+        pitch = pitch.view(batch, K, 1)
+        pitch = -pitch + 0.15
     else:
-        pitch = torch.cuda.FloatTensor(batch, K, 8).fill_(None)
+        pitch = torch.cuda.FloatTensor(batch, K, 1).fill_(None)
     detections = torch.cat([detections, pitch], dim=2)
 
     if reg_3d is not None:
@@ -474,6 +475,17 @@ def ddd_decode(heat, rot, depth, dim, wh=None, reg=None, K=40, pitch=None, reg_3
         xs_3d = torch.cuda.FloatTensor(batch, K, 1).fill_(0)
         ys_3d = torch.cuda.FloatTensor(batch, K, 1).fill_(0)
     detections = torch.cat([detections, xs_3d, ys_3d], dim=2)
+
+    if reg_BPE is not None:
+        reg_BPE = _transpose_and_gather_feat(reg_BPE, inds)
+        reg_BPE = reg_BPE.view(batch, K, 2)
+        LBPE = xs_t.view(batch, K, 1) - reg_BPE[:, :, 0:1]
+        RBPE = xs_t.view(batch, K, 1) - reg_BPE[:, :, 1:2]
+    else:
+        LBPE = torch.cuda.FloatTensor(batch, K, 1).fill_(0)
+        RBPE = torch.cuda.FloatTensor(batch, K, 1).fill_(0)
+
+    detections = torch.cat([detections, LBPE, RBPE], dim=2)
 
     return detections
 

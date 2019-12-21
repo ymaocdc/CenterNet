@@ -34,10 +34,11 @@ class PKU(data.Dataset):
         #     self.annot_path = os.path.join(self.data_dir,
         #                                    'annotations', 'kitti_{}_{}.json').format(opt.kitti_split, split)
 
-
+        # split =
         self.img_dir = os.path.join(self.data_dir, 'images', '{}_images'.format(split))
         self.annot_path = os.path.join(self.data_dir, 'annotations', '{}_coco_format.json').format(split)
 
+        # self.annot_path = os.path.join(self.root_dir, 'val_coco_format_overfit.json')
         self.max_objs = 50
         self.class_name = [
             '__background__', '2x', '3x', 'SUV']
