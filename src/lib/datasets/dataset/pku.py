@@ -36,7 +36,7 @@ class PKU(data.Dataset):
 
         # split =
         self.img_dir = os.path.join(self.data_dir, 'images', '{}_images'.format(split))
-        self.annot_path = os.path.join(self.data_dir, 'annotations', '{}_coco_format.json').format(split)
+        self.annot_path = os.path.join(self.data_dir, 'annotations', '{}_coco_format_correct.json').format(split)
 
         # self.annot_path = os.path.join(self.root_dir, 'val_coco_format_overfit.json')
         self.max_objs = 50

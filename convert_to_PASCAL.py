@@ -60,9 +60,9 @@ assert len(im_files) == len(label_files)
 annotations["images"] = []
 annotations["annotations"] = []
 num_obj = 0
-for image_id, im_file in enumerate(im_files):
-    if not 'ID_0ad448f58' in im_file:
-        continue
+for image_id, im_file in enumerate(tqdm(im_files[4000:])):
+    # if not 'ID_0ad448f58' in im_file:
+    #     continue
     width = 3384
     height = 2710
     file_name = im_file.split('/')[-1]
@@ -109,6 +109,6 @@ for image_id, im_file in enumerate(im_files):
         )
         num_obj = num_obj + 1
 
-json_path = os.path.join(root_folder, '{}_coco_format_overfit'.format(mode)+".json")
+json_path = os.path.join(root_folder, '{}_coco_format_correct'.format(mode)+".json")
 with open(json_path, "w") as f:
     json.dump(annotations, f,cls=NumpyEncoder)
