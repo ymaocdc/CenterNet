@@ -64,6 +64,7 @@ class PkuDetector(BaseDetector):
             reg = output['reg'] if self.opt.reg_offset else None
             pitch = output['pitch'] if self.opt.reg_pitch else None
             reg_3d = output['reg_3d_ct'] if self.opt.reg_3d_center else None
+            reg_BPE = output['reg_BPE'] if self.opt.reg_BPE else None
             torch.cuda.synchronize()
             forward_time = time.time()
 

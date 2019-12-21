@@ -69,8 +69,12 @@ class PKUDataset(data.Dataset):
             reg_3d_ct = np.zeros((self.max_objs, 2), dtype=np.float32)
             reg_3d_ct_mask = np.zeros((self.max_objs), dtype=np.uint8)
         if self.opt.reg_pitch:
-            reg_pitch = np.zeros((self.max_objs, 2), dtype=np.float32)
+            reg_pitch = np.zeros((self.max_objs, 1), dtype=np.float32)
             reg_pitch_mask = np.zeros((self.max_objs), dtype=np.uint8)
+        if self.opt.reg_BPE:
+            reg_BPE = np.zeros((self.max_objs, 2), dtype=np.float32)
+            reg_BPE_mask = np.zeros((self.max_objs), dtype=np.uint8)
+
         hm = np.zeros(
             (num_classes, self.opt.output_h, self.opt.output_w), dtype=np.float32)
         wh = np.zeros((self.max_objs, 2), dtype=np.float32)
@@ -94,10 +98,14 @@ class PKUDataset(data.Dataset):
         for k in range(num_objs):
             ann = anns[k]
             ann['3D_dimension'] = [ann['3D_dimension'][1], ann['3D_dimension'][0], ann['3D_dimension'][2]]
-            if self.opt.reg_3d_center:
-                projected_3D_center = ann['projected_3D_center']
-                projected_3D_center = affine_transform(projected_3D_center, trans_output)
+
             bbox = self._coco_box_to_bbox(ann['bbox'])
+
+            if self.opt.reg_BPE:
+                BPE = ann['BPE']
+                BPE[0] = affine_transform(np.array([BPE[0], bbox[1]],dtype=np.float), trans_output)[0]
+                BPE[1] = affine_transform(np.array([BPE[1], bbox[1]], dtype=np.float), trans_output)[0]
+
             cls_id = int(self.cat_ids[ann['category_id']])
             if cls_id <= -99:
                 continue
@@ -114,9 +122,7 @@ class PKUDataset(data.Dataset):
                 ct = np.array(
                     [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2], dtype=np.float32)
                 ct_int = ct.astype(np.int32)
-                if self.opt.reg_3d_center:
-                    ct_3d = np.array(projected_3D_center, dtype=np.float32)
-                    ct_3d_int = ct_3d.astype(np.int32)
+
                 if cls_id < 0:
                     ignore_id = [_ for _ in range(num_classes)] \
                         if cls_id == - 1 else [- cls_id - 2]
@@ -132,11 +138,6 @@ class PKUDataset(data.Dataset):
                 draw_gaussian(hm[cls_id], ct, radius)
 
                 alpha = ann['local_yaw']
-                # if alpha <= 3 / 2 * np.pi:
-                #     alpha = alpha - np.pi / 2
-                # else:
-                #     alpha = -(np.pi * 2 - alpha + np.pi / 2)
-
                 wh[k] = 1. * w, 1. * h
                 gt_det.append([ct[0], ct[1], 1] + \
                               self._alpha_to_8(self._convert_alpha(alpha)) + \
@@ -144,41 +145,47 @@ class PKUDataset(data.Dataset):
 
                 if self.opt.reg_bbox:
                     gt_det[-1] = gt_det[-1][:-1] + [w, h] + [gt_det[-1][-1]]
+
+                if alpha < np.pi/2+np.pi/6. or alpha > np.pi/2*3-np.pi/6:
+                    rotbin[k, 0] = 1
+                    rotres[k, 0] = alpha
+                if alpha < np.pi/2-np.pi/6. or alpha < np.pi/2*3+np.pi/6:
+                    rotbin[k, 1] = 1
+                    rotres[k, 1] = alpha
+
+                if self.opt.reg_pitch:
+                    pitch = ann['pitch']
+                    reg_pitch[k] = -0.15-pitch
+                    reg_pitch_mask[k] = 1
+                    gt_det[-1] = gt_det[-1] + [reg_pitch[k][0]]
+
                 if self.opt.reg_3d_center:
+                    projected_3D_center = ann['projected_3D_center']
+                    projected_3D_center = affine_transform(projected_3D_center, trans_output)
+                    ct_3d = np.array(projected_3D_center, dtype=np.float32)
+                    ct_3d_int = ct_3d.astype(np.int32)
+                    reg_3d_ct[k] = ct - ct_3d
+                    reg_3d_ct_mask[k] = 1
                     gt_det[-1] = gt_det[-1] + [ct_3d[0], ct_3d[1], 1]
 
-                # if (not self.opt.car_only) or cls_id == 1: # Only estimate ADD for cars !!!
-                if 1:
-                    # alpha = self._convert_alpha(alpha)
-                    # print('img_id cls_id alpha rot_y', img_path, cls_id, alpha, ann['rotation_y'])
-                    if alpha < np.pi/2+np.pi/6. or alpha > np.pi/2*3-np.pi/6:
-                        rotbin[k, 0] = 1
-                        rotres[k, 0] = alpha
-                    if alpha < np.pi/2-np.pi/6. or alpha < np.pi/2*3+np.pi/6:
-                        rotbin[k, 1] = 1
-                        rotres[k, 1] = alpha
-                    if self.opt.reg_pitch:
-                        pitch = ann['pitch']
-                        reg_pitch[k] = -0.15-pitch
-                        reg_pitch_mask[k] = 1
-
-                    # {'SUV': {'W': 2.10604523, 'H': 1.67994469, 'L': 4.73350861},
-                    #  '2x': {'W': 1.81794264, 'H': 1.47786305, 'L': 4.49547776},
-                    #  '3x': {'W': 2.02599449, 'H': 1.4570455199999999, 'L': 4.82244445}}
-                    dep[k] = ann['3D_location'][2]
-                    dim[k] = ann['3D_dimension']
-                    # print('        cat dim', cls_id, dim[k])
-                    ind[k] = ct_int[1] * self.opt.output_w + ct_int[0]
-                    reg[k] = ct - ct_int
-                    reg_mask[k] = 1 if not aug else 0
-                    rot_mask[k] = 1 if not aug else 0
-                    if self.opt.reg_3d_center:
-                        reg_3d_ct[k] = ct - projected_3D_center
-                        reg_3d_ct_mask[k] = 1 if not aug else 0
+                if self.opt.reg_BPE:
+                    reg_BPE[k]  = np.array([ct[0] - BPE[0], ct[0] - BPE[1]], dtype=np.float32)
+                    reg_BPE_mask[k] = 1
+                    gt_det[-1] = gt_det[-1] + [ct[0] - BPE[0], ct[0] - BPE[1]]
 
 
-        # print('gt_det', gt_det)
-        # print('')
+
+                dep[k] = ann['3D_location'][2]
+                dim[k] = ann['3D_dimension']
+                # print('        cat dim', cls_id, dim[k])
+                ind[k] = ct_int[1] * self.opt.output_w + ct_int[0]
+                reg[k] = ct - ct_int
+                reg_mask[k] = 1 if not aug else 0
+                rot_mask[k] = 1 if not aug else 0
+
+                # {'SUV': {'W': 2.10604523, 'H': 1.67994469, 'L': 4.73350861},
+                #  '2x': {'W': 1.81794264, 'H': 1.47786305, 'L': 4.49547776},
+                #  '3x': {'W': 2.02599449, 'H': 1.4570455199999999, 'L': 4.82244445}}
         ret = {'input': inp, 'hm': hm, 'dep': dep, 'dim': dim, 'ind': ind,
                'rotbin': rotbin, 'rotres': rotres, 'reg_mask': reg_mask,
                'rot_mask': rot_mask}
@@ -186,6 +193,8 @@ class PKUDataset(data.Dataset):
             ret.update({'reg_pitch': reg_pitch, 'reg_pitch_mask': reg_pitch_mask})
         if self.opt.reg_3d_center:
             ret.update({'reg_3d_ct': reg_3d_ct, 'reg_3d_ct_mask': reg_3d_ct_mask})
+        if self.opt.reg_BPE:
+            ret.update({'reg_BPE':reg_BPE, 'reg_BPE_mask': reg_BPE_mask})
         if self.opt.reg_bbox:
             ret.update({'wh': wh})
         if self.opt.reg_offset:

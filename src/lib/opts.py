@@ -181,6 +181,11 @@ class opts(object):
                              help='regress 3d_center in 2d image.')
     self.parser.add_argument('--reg_3d_center_weight', type=float, default=1,
                              help='loss weight for 3d_center in 2d image.')
+    self.parser.add_argument('--reg_BPE', action='store_true', default=False,
+                             help='regress BPE.')
+    self.parser.add_argument('--reg_BPE_weight', type=float, default=1,
+                             help='loss weight for regressing BPE.')
+
     self.parser.add_argument('--peak_thresh', type=float, default=0.2)
     
     # task
@@ -350,6 +355,8 @@ class opts(object):
           opt.heads.update({'reg_pitch': 1})
       if opt.reg_3d_center:
           opt.heads.update({'reg_3d_ct': 2})
+      if opt.reg_BPE:
+          opt.heads.update({'reg_BPE': 2})
     else:
       assert 0, 'task not defined!'
     print('heads', opt.heads)
