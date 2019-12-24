@@ -16,6 +16,7 @@ mode = 'val'
 root_folder = '/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku'
 image_folder = os.path.join(root_folder, 'data/images', '{}_images'.format(mode))
 label_folder = os.path.join(root_folder, 'with_mask_labels')
+output_folder = os.path.join(root_folder, 'data/annotations')
 
 __CLASS__ = ['__background__', '2x', '3x', 'SUV']
 _class_ = np.array(__CLASS__)
@@ -109,6 +110,6 @@ for image_id, im_file in enumerate(tqdm(im_files[4000:])):
         )
         num_obj = num_obj + 1
 
-json_path = os.path.join(root_folder, '{}_coco_format_correct'.format(mode)+".json")
+json_path = os.path.join(output_folder, '{}_coco_format_correct_yaw'.format(mode)+".json")
 with open(json_path, "w") as f:
     json.dump(annotations, f,cls=NumpyEncoder)

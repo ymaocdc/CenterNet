@@ -145,6 +145,9 @@ class PKUDataset(data.Dataset):
                 draw_gaussian(hm[cls_id], ct, radius)
 
                 alpha = ann['local_yaw']
+
+                if alpha < 0:
+                    print('aaa')
                 wh[k] = 1. * w, 1. * h
                 gt_det.append([ct[0], ct[1], 1] + \
                               self._alpha_to_8(self._convert_alpha(alpha)) + \
@@ -153,10 +156,32 @@ class PKUDataset(data.Dataset):
                 if self.opt.reg_bbox:
                     gt_det[-1] = gt_det[-1][:-1] + [w, h] + [gt_det[-1][-1]]
                 # print(ann['bbox'][:2], np.rad2deg(alpha))
+
+                # if alpha < np.pi/4+np.pi/8. or alpha > np.pi/2*3-np.pi/8:
+                #     rotbin[k, 0] = 1
+                #     if alpha < np.pi/4+np.pi/8:
+                #         rotres[k, 0] = alpha
+                #     else:
+                #         rotres[k, 0] = alpha - np.pi*2
+                # if alpha > np.pi/4-np.pi/8. and alpha < np.pi/4*3+np.pi/8:
+                #     rotbin[k, 1] = 1
+                #     rotres[k, 1] = alpha - np.pi/2
+                # if alpha > np.pi/4*3-np.pi/8. or alpha > np.pi/4*5+np.pi/8:
+                #     rotbin[k, 2] = 1
+                #     rotres[k, 2] = alpha - np.pi
+                # if alpha > np.pi/4*5-np.pi/8. and alpha < np.pi/2*7+np.pi/8:
+                #     rotbin[k, 3] = 1
+                #     rotres[k, 3] = alpha - np.pi/2*3
+
+
                 if alpha < np.pi/2+np.pi/6. or alpha > np.pi/2*3-np.pi/6:
                     rotbin[k, 0] = 1
-                    rotres[k, 0] = alpha
+                    if alpha < np.pi/2 +np.pi/6:
+                        rotres[k, 0] = alpha
+                    else:
+                        rotres[k, 0] = alpha-np.pi*2
                 if alpha < np.pi/2-np.pi/6. or alpha < np.pi/2*3+np.pi/6:
+                    alpha = alpha-np.pi
                     rotbin[k, 1] = 1
                     rotres[k, 1] = alpha
 
@@ -192,7 +217,7 @@ class PKUDataset(data.Dataset):
                 ind[k] = ct_int[1] * self.opt.output_w + ct_int[0]
                 reg[k] = ct - ct_int
                 reg_mask[k] = 1 if not aug else 0
-                rot_mask[k] = 1 if not aug else 0
+                rot_mask[k] = 1
 
                 # {'SUV': {'W': 2.10604523, 'H': 1.67994469, 'L': 4.73350861},
                 #  '2x': {'W': 1.81794264, 'H': 1.47786305, 'L': 4.49547776},
