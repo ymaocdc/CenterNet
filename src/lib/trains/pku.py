@@ -27,7 +27,7 @@ class DddLoss(torch.nn.Module):
     def forward(self, outputs, batch):
         opt = self.opt
 
-        hm_loss, dep_loss, rot_loss, dim_loss, pitch_loss, reg_3d_center_loss, reg_BPE_loss = 0, 0, 0, 0, 0, 0, 0
+        hm_loss, dep_loss, rot_loss, dim_loss, pitch_loss, reg_3d_center_loss, reg_BPE_loss, reg_FPE_loss = 0, 0, 0, 0, 0, 0, 0, 0
         wh_loss, off_loss = 0, 0
         for s in range(opt.num_stacks):
             output = outputs[s]
@@ -66,11 +66,15 @@ class DddLoss(torch.nn.Module):
             if opt.reg_BPE and opt.reg_BPE_weight >=0:
                 reg_BPE_loss += self.crit_reg(output['reg_BPE'], batch['reg_BPE_mask'],
                                                     batch['ind'], batch['reg_BPE']) / opt.num_stacks
+            if opt.reg_FPE and opt.reg_FPE_weight >= 0:
+                reg_FPE_loss += self.crit_reg(output['reg_FPE'], batch['reg_FPE_mask'],
+                                              batch['ind'], batch['reg_FPE']) / opt.num_stacks
 
         loss = opt.hm_weight * hm_loss + opt.dep_weight * dep_loss + \
                opt.dim_weight * dim_loss + opt.rot_weight * rot_loss + \
                opt.wh_weight * wh_loss + opt.off_weight * off_loss + opt.pitch_weight * pitch_loss + \
-               opt.reg_3d_center_weight*reg_3d_center_loss + opt.reg_BPE_weight * reg_BPE_loss
+               opt.reg_3d_center_weight*reg_3d_center_loss + opt.reg_BPE_weight * reg_BPE_loss + \
+               opt.reg_FPE_weight * reg_FPE_loss
 
 
         loss_stats = {'loss': loss, 'hm_loss': hm_loss, 'dep_loss': dep_loss,
@@ -82,6 +86,8 @@ class DddLoss(torch.nn.Module):
             loss_stats.update({'reg_3d_center_loss': reg_3d_center_loss})
         if self.opt.reg_BPE:
             loss_stats.update({'reg_BPE_loss': reg_BPE_loss})
+        if self.opt.reg_FPE:
+            loss_stats.update({'reg_FPE_loss': reg_FPE_loss})
         return loss, loss_stats
 
 
@@ -96,8 +102,8 @@ class PkuTrainer(BaseTrainer):
             loss_states = loss_states + ['reg_pitch_loss']
         if self.opt.reg_3d_center:
             loss_states = loss_states + ['reg_3d_center_loss']
-        if self.opt.reg_BPE:
-            loss_states = loss_states + ['reg_3d_center_loss']
+        if self.opt.reg_FPE:
+            loss_states = loss_states + ['reg_FPE_loss']
         if self.opt.reg_BPE:
             loss_states = loss_states + ['reg_BPE_loss']
         loss = DddLoss(opt)

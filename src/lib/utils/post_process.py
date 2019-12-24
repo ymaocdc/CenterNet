@@ -15,8 +15,8 @@ def get_alpha(rot):
   #                 bin2_cls[0], bin2_cls[1], bin2_sin, bin2_cos]
   # return rot[:, 0]
   idx = rot[:, 1] > rot[:, 5]
-  alpha1 = np.arctan(rot[:, 2] / rot[:, 3]) + (-0.5 * np.pi)
-  alpha2 = np.arctan(rot[:, 6] / rot[:, 7]) + ( 0.5 * np.pi)
+  alpha1 = np.arctan(rot[:, 2] / rot[:, 3])
+  alpha2 = np.arctan(rot[:, 6] / rot[:, 7])+np.pi
   return alpha1 * idx + alpha2 * (1 - idx)
   
 
@@ -44,6 +44,13 @@ def ddd_post_process_2d(dets, c, s, opt):
         np.array([dets[i, :, 22], xymax[:, 1]], dtype=np.float).transpose(), c[i], s[i], (opt.output_w, opt.output_h))
     dets[i, :, 21] = lbpe[:, 0]
     dets[i, :, 22] = rbpe[:, 0]
+
+    lfpe = transform_preds(
+      np.array([dets[i, :, 23], xymax[:, 1]], dtype=np.float).transpose(), c[i], s[i], (opt.output_w, opt.output_h))
+    rfpe = transform_preds(
+      np.array([dets[i, :, 24], xymax[:, 1]], dtype=np.float).transpose(), c[i], s[i], (opt.output_w, opt.output_h))
+    dets[i, :, 23] = lfpe[:, 0]
+    dets[i, :, 24] = rfpe[:, 0]
 
 
     classes = dets[i, :, 17]
@@ -75,6 +82,13 @@ def ddd_post_process_2d(dets, c, s, opt):
       if opt.reg_BPE:
         top_preds[j + 1] = np.concatenate(
           [top_preds[j + 1], dets[i, inds, 21:23].astype(np.float32)], axis=1)
+      else:
+        top_preds[j + 1] = np.concatenate(
+          [top_preds[j + 1], np.zeros((top_preds[j + 1].shape[0], 2), dtype=np.float32)], axis=1)
+
+      if opt.reg_FPE:
+        top_preds[j + 1] = np.concatenate(
+          [top_preds[j + 1], dets[i, inds, 23:25].astype(np.float32)], axis=1)
       else:
         top_preds[j + 1] = np.concatenate(
           [top_preds[j + 1], np.zeros((top_preds[j + 1].shape[0], 2), dtype=np.float32)], axis=1)
@@ -119,6 +133,11 @@ def ddd_post_process_3d(dets, calibs, opt):
         if opt.reg_BPE:
           BPE = dets[i][cls_ind][j][13:15]
           pred = pred + BPE.tolist()
+        else:
+          pred = pred + [None]
+        if opt.reg_FPE:
+          FPE = dets[i][cls_ind][j][15:17]
+          pred = pred + FPE.tolist()
         else:
           pred = pred + [None]
 

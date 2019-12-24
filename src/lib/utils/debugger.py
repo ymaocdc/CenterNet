@@ -173,7 +173,7 @@ class Debugger(object):
       cv2.circle(self.imgs[img_id], (rect1[0], rect2[1]), int(10 * conf), c, 1)
       cv2.circle(self.imgs[img_id], (rect2[0], rect1[1]), int(10 * conf), c, 1)
 
-  def add_coco_bbox(self, bbox, cat, conf=1, show_txt=True, img_id='default', BPE=None):
+  def add_coco_bbox(self, bbox, cat, conf=1, show_txt=True, img_id='default', BPE=None, FPE=None):
     bbox = np.array(bbox, dtype=np.int32)
     # cat = (int(cat) + 1) % 80
     cat = int(cat)
@@ -192,6 +192,13 @@ class Debugger(object):
                  lineType=cv2.LINE_AA)
         cv2.line(self.imgs[img_id], (int(BPE[1]), bbox[1]),
                  (int(BPE[1]), bbox[3]), (255, 0, 0),2,
+                 lineType=cv2.LINE_AA)
+    if FPE is not None:
+        cv2.line(self.imgs[img_id], (int(FPE[0]),  bbox[1]),
+                 (int(FPE[0]),  bbox[3]), (0, 255, 255),2,
+                 lineType=cv2.LINE_AA)
+        cv2.line(self.imgs[img_id], (int(FPE[1]), bbox[1]),
+                 (int(FPE[1]), bbox[3]), (0, 255, 0),2,
                  lineType=cv2.LINE_AA)
     if show_txt:
       cv2.rectangle(self.imgs[img_id],
@@ -319,6 +326,54 @@ class Debugger(object):
                             dtype=np.float32)
             self.add_coco_bbox(bbox, dets[i, -1], dets[i, 2], img_id=img_id)
 
+  def euler_to_Rot(self, yaw, pitch, roll):
+      Y = np.array([[np.cos(yaw), 0, np.sin(yaw)],
+                    [0, 1, 0],
+                    [-np.sin(yaw), 0, np.cos(yaw)]])
+      P = np.array([[1, 0, 0],
+                    [0, np.cos(pitch), -np.sin(pitch)],
+                    [0, np.sin(pitch), np.cos(pitch)]])
+      R = np.array([[np.cos(roll), -np.sin(roll), 0],
+                    [np.sin(roll), np.cos(roll), 0],
+                    [0, 0, 1]])
+      return np.dot(Y, np.dot(P, R))
+
+  def draw_line(self, image, points):
+      color = (255, 0, 0)
+      cv2.line(image, tuple(points[1][:2]), tuple(points[2][:2]), color, 5)
+      cv2.line(image, tuple(points[1][:2]), tuple(points[4][:2]), color, 5)
+
+      cv2.line(image, tuple(points[1][:2]), tuple(points[5][:2]), color, 5)
+      cv2.line(image, tuple(points[2][:2]), tuple(points[3][:2]), color, 5)
+      cv2.line(image, tuple(points[2][:2]), tuple(points[6][:2]), color, 5)
+      cv2.line(image, tuple(points[3][:2]), tuple(points[4][:2]), color, 5)
+      cv2.line(image, tuple(points[3][:2]), tuple(points[7][:2]), color, 5)
+
+      cv2.line(image, tuple(points[4][:2]), tuple(points[8][:2]), color, 5)
+      cv2.line(image, tuple(points[5][:2]), tuple(points[8][:2]), color, 5)
+
+      cv2.line(image, tuple(points[5][:2]), tuple(points[6][:2]), color, 5)
+      cv2.line(image, tuple(points[6][:2]), tuple(points[7][:2]), color, 5)
+      cv2.line(image, tuple(points[7][:2]), tuple(points[8][:2]), color, 5)
+      return image
+
+  def draw_points(self, image, points):
+      for idx, (p_x, p_y, p_z) in enumerate(points):
+          if idx == 0:
+              color = (0, 0, 255)
+              size = 10
+          else:
+              color = (0, 0, 255)
+              size = 10
+          if idx == 1:
+              color = (0, 255, 0)
+              size = 10
+          if idx == 7:
+              color = (255, 0, 0)
+              size = 10
+          if idx >0:
+              cv2.circle(image, (p_x, p_y), size, color, -1)
+      return image
 
   def add_3d_detection(
     self, image_or_path, dets, calib, opt, show_txt=True,
@@ -342,15 +397,54 @@ class Debugger(object):
 
           pitch = dets[cat][i, 13] if opt.reg_pitch else None
           BPE = dets[cat][i, 14:16] if opt.reg_BPE else None
+          FPE = dets[cat][i, 16:18] if opt.reg_FPE else None
           # loc[1] = loc[1] - dim[0] / 2 + dim[0] / 2 / self.dim_scale
           # dim = dim / self.dim_scale
+
+          # convert euler angle to rotation matrix
+
+
+          # dim = [2.0, 1.0, 4.0]
+          yaw = rot_y
+          roll = 0
+          x, y, z = loc
+          x_l, y_l, z_l = dim[1]/2, dim[0]/2, dim[2]/2
+          Rt = np.eye(4)
+          t = np.array([x, y, z])
+          Rt[:3, 3] = t
+          Rt[:3, :3] = self.euler_to_Rot(yaw, pitch, roll).T
+          Rt = Rt[:3, :]
+          P = np.array([[0, 0, 0, 1],
+                        [x_l, y_l, -z_l, 1],
+                        [x_l, y_l, z_l, 1],
+                        [-x_l, y_l, z_l, 1],
+                        [-x_l, y_l, -z_l, 1],
+                        [x_l, -y_l, -z_l, 1],
+                        [x_l, -y_l, z_l, 1],
+                        [-x_l, -y_l, z_l, 1],
+                        [-x_l, -y_l, -z_l, 1]]).T
+          img_cor_points = np.dot(calib[:3,:3], np.dot(Rt, P))
+          img_cor_points = img_cor_points.T
+          img_cor_points[:, 0] /= img_cor_points[:, 2]
+          img_cor_points[:, 1] /= img_cor_points[:, 2]
+          # call this function before chage the dtype
+          # img_cor_2_world_cor()
+
+          img_cor_points = img_cor_points.astype(int)
+          self.imgs[img_id] = self.draw_line(self.imgs[img_id], img_cor_points)
+          self.imgs[img_id] = self.draw_points(self.imgs[img_id], img_cor_points)
+
           # if loc[2] > 1:
           #   box_3d = compute_box_3d(dim, loc, rot_y, pitch)
           #   box_2d = project_to_image(box_3d, calib)
           #   self.imgs[img_id] = draw_box_3d(self.imgs[img_id], box_2d, cl)
-          self.add_coco_bbox(
-            bbox, cat - 1, dets[cat][i, 12],
-            show_txt=show_txt, img_id=img_id, BPE=BPE)
+
+
+          # self.add_coco_bbox(
+          #   bbox, cat - 1, dets[cat][i, 12],
+          #   show_txt=show_txt, img_id=img_id, BPE=BPE, FPE=FPE)
+
+
           # import matplotlib.pyplot as plt
           # plt.imshow(self.imgs[img_id][:,:,::-1])
           # plt.show()

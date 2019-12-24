@@ -8,7 +8,7 @@ from progress.bar import Bar
 import time
 import torch
 import matplotlib.pyplot as plt
-
+import os
 from models.decode import ddd_decode
 from models.utils import flip_tensor
 from utils.image import get_affine_transform
@@ -65,11 +65,12 @@ class PkuDetector(BaseDetector):
             pitch = output['reg_pitch'] if self.opt.reg_pitch else None
             reg_3d = output['reg_3d_ct'] if self.opt.reg_3d_center else None
             reg_BPE = output['reg_BPE'] if self.opt.reg_BPE else None
+            reg_FPE = output['reg_FPE'] if self.opt.reg_FPE else None
             torch.cuda.synchronize()
             forward_time = time.time()
 
             dets = ddd_decode(output['hm'], output['rot'], output['dep'],
-                              output['dim'], wh=wh, reg=reg, K=self.opt.K, pitch=pitch, reg_3d=reg_3d, reg_BPE=reg_BPE)
+                              output['dim'], wh=wh, reg=reg, K=self.opt.K, pitch=pitch, reg_3d=reg_3d, reg_BPE=reg_BPE, reg_FPE=reg_FPE)
         if return_time:
             return output, dets, forward_time
         else:
@@ -100,14 +101,15 @@ class PkuDetector(BaseDetector):
             img, dets[0], show_box=self.opt.reg_bbox,
             center_thresh=self.opt.vis_thresh, img_id='det_pred')
 
-    def show_results(self, debugger, image, results):
+    def show_results(self, debugger, image, results, image_or_path_or_tensor):
         debugger.add_3d_detection(
             image, results, self.this_calib, self.opt,
             center_thresh=self.opt.vis_thresh, img_id='add_pred')
         if self.opt.debug > 0:
-            fig = plt.figure(figsize=(10, 10))
+            fig = plt.figure(figsize=(40, 40))
             plt.imshow(image[:,:,::-1])
-            plt.show()
+            plt.savefig(os.path.join(self.opt.output_dir, image_or_path_or_tensor.split('/')[-1]))
+            # plt.show()
         debugger.add_bird_view(
             results, self.opt, center_thresh=self.opt.vis_thresh, img_id='bird_pred')
         # debugger.show_all_imgs(pause=self.pause)

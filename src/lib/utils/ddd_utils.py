@@ -92,6 +92,42 @@ def unproject_2d_to_3d(pt_2d, depth, P):
   pt_3d = np.array([x, y, z], dtype=np.float32)
   return pt_3d
 
+
+def get_theta_ray(cx,
+                  intrisics=[2038.77, 0.0, 908.027344, 0.0, 2038.77, 474.874634, 0.0, 0.0, 1.0]):
+    """Get thera ray for a specific bbox, emitting from ego car to bbox center
+
+    Example:
+        [509.6925, 0.0, 227.006836, 0.0, 509.6925, 118.7186585, 0.0, 0.0, 1.0] * 4
+
+
+    Args:
+        cx: landmark point of bbox used to calculate theta_ray
+        intrisics: intrinsics in pixels in orignal scale
+
+    Returns:
+
+    """
+    # intrisics = np.array(intrisics).reshape((3, 3))
+    px = intrisics[0, 2]
+    fx = intrisics[0, 0]
+    # py = intrisics[1, 2]
+    # fy = intrisics[1, 1]
+    dx = cx - px
+    theta_ray = np.arctan2(dx, fx)
+    return theta_ray
+
+def get_global_yaw(local_yaw, theta_ray):
+    """Convert from local yaw to global yaw"""
+    return theta_ray + local_yaw
+
+def alpha2rot_y2(alpha, x, K):
+
+    theta_ray = get_theta_ray(cx=x, intrisics=K)
+    rot_y = get_global_yaw(alpha, theta_ray)
+
+    return rot_y
+
 def alpha2rot_y(alpha, x, cx, fx):
     """
     Get rotation_y by alpha + theta - 180
@@ -125,7 +161,8 @@ def ddd2locrot(center, alpha, dim, depth, calib):
   # single image
   locations = unproject_2d_to_3d(center, depth, calib)
   # locations[1] += dim[0] / 2
-  rotation_y = alpha2rot_y(alpha, center[0], calib[0, 2], calib[0, 0])
+  # rotation_y = alpha2rot_y(alpha, center[0], calib[0, 2], calib[0, 0])
+  rotation_y = alpha2rot_y2(alpha, center[0], calib)
   return locations, rotation_y
 
 def project_3d_bbox(location, dim, rotation_y, calib):

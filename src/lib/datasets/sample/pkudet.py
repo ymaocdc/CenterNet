@@ -74,6 +74,9 @@ class PKUDataset(data.Dataset):
         if self.opt.reg_BPE:
             reg_BPE = np.zeros((self.max_objs, 2), dtype=np.float32)
             reg_BPE_mask = np.zeros((self.max_objs), dtype=np.uint8)
+        if self.opt.reg_FPE:
+            reg_FPE = np.zeros((self.max_objs, 2), dtype=np.float32)
+            reg_FPE_mask = np.zeros((self.max_objs), dtype=np.uint8)
 
         hm = np.zeros(
             (num_classes, self.opt.output_h, self.opt.output_w), dtype=np.float32)
@@ -105,6 +108,10 @@ class PKUDataset(data.Dataset):
                 BPE = ann['BPE']
                 BPE[0] = affine_transform(np.array([BPE[0], bbox[1]],dtype=np.float), trans_output)[0]
                 BPE[1] = affine_transform(np.array([BPE[1], bbox[1]], dtype=np.float), trans_output)[0]
+            if self.opt.reg_FPE:
+                FPE = ann['FPE']
+                FPE[0] = affine_transform(np.array([FPE[0], bbox[1]],dtype=np.float), trans_output)[0]
+                FPE[1] = affine_transform(np.array([FPE[1], bbox[1]], dtype=np.float), trans_output)[0]
 
             cls_id = int(self.cat_ids[ann['category_id']])
             if cls_id <= -99:
@@ -145,7 +152,7 @@ class PKUDataset(data.Dataset):
 
                 if self.opt.reg_bbox:
                     gt_det[-1] = gt_det[-1][:-1] + [w, h] + [gt_det[-1][-1]]
-
+                # print(ann['bbox'][:2], np.rad2deg(alpha))
                 if alpha < np.pi/2+np.pi/6. or alpha > np.pi/2*3-np.pi/6:
                     rotbin[k, 0] = 1
                     rotres[k, 0] = alpha
@@ -172,6 +179,10 @@ class PKUDataset(data.Dataset):
                     reg_BPE[k] = np.array([ct[0] - BPE[0], ct[0] - BPE[1]], dtype=np.float32)
                     reg_BPE_mask[k] = 1 if not aug else 0
                     gt_det[-1] = gt_det[-1] + [ct[0] - BPE[0], ct[0] - BPE[1]]
+                if self.opt.reg_FPE:
+                    reg_FPE[k] = np.array([ct[0] - FPE[0], ct[0] - FPE[1]], dtype=np.float32)
+                    reg_FPE_mask[k] = 1 if not aug else 0
+                    gt_det[-1] = gt_det[-1] + [ct[0] - FPE[0], ct[0] - FPE[1]]
 
 
 
@@ -195,6 +206,8 @@ class PKUDataset(data.Dataset):
             ret.update({'reg_3d_ct': reg_3d_ct, 'reg_3d_ct_mask': reg_3d_ct_mask})
         if self.opt.reg_BPE:
             ret.update({'reg_BPE':reg_BPE, 'reg_BPE_mask': reg_BPE_mask})
+        if self.opt.reg_FPE:
+            ret.update({'reg_FPE':reg_FPE, 'reg_FPE_mask': reg_FPE_mask})
         if self.opt.reg_bbox:
             ret.update({'wh': wh})
         if self.opt.reg_offset:

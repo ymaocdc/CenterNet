@@ -318,12 +318,12 @@ if __name__ == "__main__":
         img_name = train.loc[id]['ImageId']
         pred_string = train.loc[id]['PredictionString']
 
-        if os.path.exists(os.path.join(output_folder, img_name + '.json')):
-            continue
+        # if os.path.exists(os.path.join(output_folder, img_name + '.json')):
+        #     continue
 
         image = cv2.imread('/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku/data/images/train_images/' + img_name + '.jpg')
         # fig, ax = plt.subplots(figsize=(40, 40))
-        # img = np.array(image[:,:,::-1])
+        img = np.array(image[:,:,::-1])
         items = pred_string.split(' ')
         model_types, yaws, pitches, rolls, xs, ys, zs = [items[i::7] for i in range(7)]
         # overlay = np.zeros((image.shape[0], image.shape[1]), dtype = np.uint8)
@@ -363,7 +363,7 @@ if __name__ == "__main__":
             img_cor_points = img_cor_points.T
             img_cor_points[:, 0] /= img_cor_points[:, 2]
             img_cor_points[:, 1] /= img_cor_points[:, 2]
-            overlay = draw_obj(overlay, img_cor_points, triangles)
+            # overlay = draw_obj(overlay, img_cor_points, triangles)
 
             xmin = img_cor_points[:, 0].min()
             xmax = img_cor_points[:, 0].max()
@@ -475,10 +475,10 @@ if __name__ == "__main__":
 
             gt['objects'].append(obj)
 
-            # cv2.rectangle(img, (obj['2D_bbox_xyxy'][0], obj['2D_bbox_xyxy'][1]), (obj['2D_bbox_xyxy'][2], obj['2D_bbox_xyxy'][3]), (255, 0,0) , 5)
-            # cv2.line(img, (obj['BPE_left'][0], obj['2D_bbox_xyxy'][1]), (obj['BPE_left'][0], obj['2D_bbox_xyxy'][3]), (255, 255,0) , 5)
-            # cv2.line(img, (obj['BPE_right'][0], obj['2D_bbox_xyxy'][1]), (obj['BPE_right'][0], obj['2D_bbox_xyxy'][3]),
-            #          (0, 255, 0), 5)
+            cv2.rectangle(img, (obj['2D_bbox_xyxy'][0], obj['2D_bbox_xyxy'][1]), (obj['2D_bbox_xyxy'][2], obj['2D_bbox_xyxy'][3]), (255, 0,0) , 5)
+            cv2.line(img, (obj['FPE_left'][0], obj['2D_bbox_xyxy'][1]), (obj['FPE_left'][0], obj['2D_bbox_xyxy'][3]), (255, 255,0) , 5)
+            cv2.line(img, (obj['FPE_right'][0], obj['2D_bbox_xyxy'][1]), (obj['FPE_right'][0], obj['2D_bbox_xyxy'][3]),
+                     (0, 255, 0), 5)
         with open(os.path.join(output_folder, img_name + '.json'), 'w') as fout:
             json.dump(gt, fout, cls=NumpyEncoder)
 

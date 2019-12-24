@@ -423,7 +423,7 @@ def exct_decode(
 
     return detections
 
-def ddd_decode(heat, rot, depth, dim, wh=None, reg=None, K=40, pitch=None, reg_3d=None, reg_BPE=None):
+def ddd_decode(heat, rot, depth, dim, wh=None, reg=None, K=40, pitch=None, reg_3d=None, reg_BPE=None, reg_FPE=None):
     batch, cat, height, width = heat.size()
     # heat = torch.sigmoid(heat)
     # perform nms on heatmaps
@@ -469,8 +469,8 @@ def ddd_decode(heat, rot, depth, dim, wh=None, reg=None, K=40, pitch=None, reg_3
     if reg_3d is not None:
         reg_3d = _transpose_and_gather_feat(reg_3d, inds)
         reg_3d = reg_3d.view(batch, K, 2)
-        xs_3d = xs_t.view(batch, K, 1) + reg_3d[:, :, 0:1]
-        ys_3d = ys_t.view(batch, K, 1) + reg_3d[:, :, 1:2]
+        xs_3d = xs_t.view(batch, K, 1) - reg_3d[:, :, 0:1]
+        ys_3d = ys_t.view(batch, K, 1) - reg_3d[:, :, 1:2]
     else:
         xs_3d = torch.cuda.FloatTensor(batch, K, 1).fill_(0)
         ys_3d = torch.cuda.FloatTensor(batch, K, 1).fill_(0)
@@ -484,8 +484,18 @@ def ddd_decode(heat, rot, depth, dim, wh=None, reg=None, K=40, pitch=None, reg_3
     else:
         LBPE = torch.cuda.FloatTensor(batch, K, 1).fill_(0)
         RBPE = torch.cuda.FloatTensor(batch, K, 1).fill_(0)
-
     detections = torch.cat([detections, LBPE, RBPE], dim=2)
+
+    if reg_FPE is not None:
+        reg_FPE = _transpose_and_gather_feat(reg_FPE, inds)
+        reg_FPE = reg_FPE.view(batch, K, 2)
+        LFPE = xs_t.view(batch, K, 1) - reg_FPE[:, :, 0:1]
+        RFPE = xs_t.view(batch, K, 1) - reg_FPE[:, :, 1:2]
+    else:
+        LFPE = torch.cuda.FloatTensor(batch, K, 1).fill_(0)
+        RFPE = torch.cuda.FloatTensor(batch, K, 1).fill_(0)
+
+    detections = torch.cat([detections, LFPE, RFPE], dim=2)
 
     return detections
 

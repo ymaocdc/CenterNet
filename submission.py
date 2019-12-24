@@ -76,12 +76,11 @@ def demo(opt):
                 if test_mask[yc, xc] > 125:
                     continue
                 yaw = ret[cls_ind][j][11]
-                if yaw <= np.pi / 2 and yaw >= -np.pi:
-                    yaw = yaw + np.pi /2
-                else:
-                    yaw = yaw - np.pi/2*3
+                pitch = ret[cls_ind][j][13]
 
-                s = [0.17, yaw, -np.pi, ret[cls_ind][j][8], ret[cls_ind][j][9], ret[cls_ind][j][10],
+
+
+                s = [pitch, -yaw, -np.pi, ret[cls_ind][j][8], ret[cls_ind][j][9], ret[cls_ind][j][10],
                      ret[cls_ind][j][12]]
                 predictions[image_name.split('/')[-1].split('.j')[0]] += ' '
                 predictions[image_name.split('/')[-1].split('.j')[0]] += coords2str(s)
@@ -90,7 +89,7 @@ def demo(opt):
     for idx, image_id in enumerate(test['ImageId']):
         test['PredictionString'][idx] = predictions[image_id]
 
-    test.to_csv(os.path.join(opt.root_dir, 'submission_trial.csv'), index=False)
+    test.to_csv(os.path.join(opt.root_dir, 'submission_regALL.csv'), index=False)
     test.head()
 
     # for (image_name) in image_names:

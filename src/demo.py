@@ -27,7 +27,10 @@ def demo(opt):
   # opt.debug = max(opt.debug, 1)
   Detector = detector_factory[opt.task]
   detector = Detector(opt)
-
+  output_dir = '/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku/demo_results'
+  if not os.path.exists(output_dir):
+      os.mkdir(output_dir)
+  opt.output_dir = output_dir
   if opt.demo == 'webcam' or \
     opt.demo[opt.demo.rfind('.') + 1:].lower() in video_ext:
     cam = cv2.VideoCapture(0 if opt.demo == 'webcam' else opt.demo)

@@ -186,6 +186,11 @@ class opts(object):
     self.parser.add_argument('--reg_BPE_weight', type=float, default=1,
                              help='loss weight for regressing BPE.')
 
+    self.parser.add_argument('--reg_FPE', action='store_true', default=False,
+                             help='regress FPE.')
+    self.parser.add_argument('--reg_FPE_weight', type=float, default=1,
+                             help='loss weight for regressing FPE.')
+
     self.parser.add_argument('--peak_thresh', type=float, default=0.2)
     
     # task
@@ -357,6 +362,8 @@ class opts(object):
           opt.heads.update({'reg_3d_ct': 2})
       if opt.reg_BPE:
           opt.heads.update({'reg_BPE': 2})
+      if opt.reg_FPE:
+          opt.heads.update({'reg_FPE': 2})
     else:
       assert 0, 'task not defined!'
     print('heads', opt.heads)
