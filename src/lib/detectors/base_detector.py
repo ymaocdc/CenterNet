@@ -97,7 +97,11 @@ class BaseDetector(object):
     
     loaded_time = time.time()
     load_time += (loaded_time - start_time)
-    
+
+    org_image = image.copy()
+    if self.opt.crop_half:
+      image = image[self.opt.crop_from:, :, :]
+
     detections = []
     for scale in self.scales:
       scale_start_time = time.time()
@@ -138,7 +142,7 @@ class BaseDetector(object):
     tot_time += end_time - start_time
 
     if self.opt.debug >= 1:
-      self.show_results(debugger, image, results, image_or_path_or_tensor)
+      self.show_results(debugger, org_image, results, image_or_path_or_tensor)
     
     return {'results': results, 'tot': tot_time, 'load': load_time,
             'pre': pre_time, 'net': net_time, 'dec': dec_time,

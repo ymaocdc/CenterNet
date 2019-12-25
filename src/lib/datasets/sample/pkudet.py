@@ -29,6 +29,13 @@ class PKUDataset(data.Dataset):
         img_info = self.coco.loadImgs(ids=[img_id])[0]
         img_path = os.path.join(self.img_dir, img_info['file_name'])
         img = cv2.imread(img_path)
+        if self.opt.crop_half:
+            img = img[self.opt.crop_from:,:,:]
+
+        flipped = False
+        if np.random.random() < self.opt.flip:
+            flipped = True
+
         if 'calib' in img_info:
             calib = np.array(img_info['calib'], dtype=np.float32)
         else:
@@ -59,6 +66,8 @@ class PKUDataset(data.Dataset):
         # if self.split == 'train' and not self.opt.no_color_aug:
         #   color_aug(self._data_rng, inp, self._eig_val, self._eig_vec)
         inp = (inp - self.mean) / self.std
+        if flipped:
+            inp = inp[:,::-1,:].copy()
         inp = inp.transpose(2, 0, 1)
 
         num_classes = self.opt.num_classes
@@ -103,32 +112,42 @@ class PKUDataset(data.Dataset):
             ann['3D_dimension'] = [ann['3D_dimension'][1], ann['3D_dimension'][0], ann['3D_dimension'][2]]
 
             bbox = self._coco_box_to_bbox(ann['bbox'])
+            if self.opt.crop_half:
+                bbox[1], bbox[3] = bbox[1]-self.opt.crop_from, bbox[3]-self.opt.crop_from
 
             if self.opt.reg_BPE:
                 BPE = ann['BPE']
                 BPE[0] = affine_transform(np.array([BPE[0], bbox[1]],dtype=np.float), trans_output)[0]
                 BPE[1] = affine_transform(np.array([BPE[1], bbox[1]], dtype=np.float), trans_output)[0]
+                if flipped:
+                    BPE[0], BPE[1] = self.opt.output_w - BPE[1], self.opt.output_w - BPE[0]
             if self.opt.reg_FPE:
                 FPE = ann['FPE']
                 FPE[0] = affine_transform(np.array([FPE[0], bbox[1]],dtype=np.float), trans_output)[0]
                 FPE[1] = affine_transform(np.array([FPE[1], bbox[1]], dtype=np.float), trans_output)[0]
+                if flipped:
+                    FPE[0], FPE[1] = self.opt.output_w - FPE[1], self.opt.output_w - FPE[0]
 
             cls_id = int(self.cat_ids[ann['category_id']])
             if cls_id <= -99:
                 continue
-            # if flipped:
-            #   bbox[[0, 2]] = width - bbox[[2, 0]] - 1
+
             bbox[:2] = affine_transform(bbox[:2], trans_output)
             bbox[2:] = affine_transform(bbox[2:], trans_output)
+            if flipped:
+                bbox[[0, 2]] = self.opt.output_w - bbox[[2, 0]]
             bbox[[0, 2]] = np.clip(bbox[[0, 2]], 0, self.opt.output_w - 1)
             bbox[[1, 3]] = np.clip(bbox[[1, 3]], 0, self.opt.output_h - 1)
             h, w = bbox[3] - bbox[1], bbox[2] - bbox[0]
+
             if h > 0 and w > 0:
                 radius = gaussian_radius((h, w))
                 radius = max(0, int(radius))
                 ct = np.array(
                     [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2], dtype=np.float32)
                 ct_int = ct.astype(np.int32)
+
+
 
                 if cls_id < 0:
                     ignore_id = [_ for _ in range(num_classes)] \
@@ -144,8 +163,12 @@ class PKUDataset(data.Dataset):
                     continue
                 draw_gaussian(hm[cls_id], ct, radius)
 
-                alpha = ann['local_yaw']
 
+
+                alpha = ann['local_yaw']
+                alpha = np.remainder(alpha, np.pi*2)
+                if flipped:
+                    alpha = np.pi*2-alpha
                 if alpha < 0:
                     print('aaa')
                 wh[k] = 1. * w, 1. * h
@@ -188,25 +211,30 @@ class PKUDataset(data.Dataset):
                 if self.opt.reg_pitch:
                     pitch = ann['pitch']
                     reg_pitch[k] = -0.15-pitch
-                    reg_pitch_mask[k] = 1 if not aug else 0
+                    reg_pitch_mask[k] = 1
                     gt_det[-1] = gt_det[-1] + [reg_pitch[k][0]]
 
                 if self.opt.reg_3d_center:
                     projected_3D_center = ann['projected_3D_center']
+                    if self.opt.crop_half:
+                        projected_3D_center[1] = projected_3D_center[1] - self.opt.crop_from
                     projected_3D_center = affine_transform(projected_3D_center, trans_output)
                     ct_3d = np.array(projected_3D_center, dtype=np.float32)
+                    if flipped:
+                        ct_3d[0] = self.opt.output_w - ct_3d[0]
                     ct_3d_int = ct_3d.astype(np.int32)
                     reg_3d_ct[k] = ct - ct_3d
-                    reg_3d_ct_mask[k] = 1 if not aug else 0
+                    reg_3d_ct_mask[k] = 1
+
                     gt_det[-1] = gt_det[-1] + [ct_3d[0], ct_3d[1], 1]
 
                 if self.opt.reg_BPE:
                     reg_BPE[k] = np.array([ct[0] - BPE[0], ct[0] - BPE[1]], dtype=np.float32)
-                    reg_BPE_mask[k] = 1 if not aug else 0
+                    reg_BPE_mask[k] = 1
                     gt_det[-1] = gt_det[-1] + [ct[0] - BPE[0], ct[0] - BPE[1]]
                 if self.opt.reg_FPE:
                     reg_FPE[k] = np.array([ct[0] - FPE[0], ct[0] - FPE[1]], dtype=np.float32)
-                    reg_FPE_mask[k] = 1 if not aug else 0
+                    reg_FPE_mask[k] = 1
                     gt_det[-1] = gt_det[-1] + [ct[0] - FPE[0], ct[0] - FPE[1]]
 
 
@@ -218,6 +246,7 @@ class PKUDataset(data.Dataset):
                 reg[k] = ct - ct_int
                 reg_mask[k] = 1 if not aug else 0
                 rot_mask[k] = 1
+
 
                 # {'SUV': {'W': 2.10604523, 'H': 1.67994469, 'L': 4.73350861},
                 #  '2x': {'W': 1.81794264, 'H': 1.47786305, 'L': 4.49547776},

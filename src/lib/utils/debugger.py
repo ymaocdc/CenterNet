@@ -431,8 +431,8 @@ class Debugger(object):
           # img_cor_2_world_cor()
 
           img_cor_points = img_cor_points.astype(int)
-          # self.imgs[img_id] = self.draw_line(self.imgs[img_id], img_cor_points)
-          # self.imgs[img_id] = self.draw_points(self.imgs[img_id], img_cor_points)
+          self.imgs[img_id] = self.draw_line(self.imgs[img_id], img_cor_points)
+          self.imgs[img_id] = self.draw_points(self.imgs[img_id], img_cor_points)
 
           # if loc[2] > 1:
           #   box_3d = compute_box_3d(dim, loc, rot_y, pitch)
@@ -440,9 +440,9 @@ class Debugger(object):
           #   self.imgs[img_id] = draw_box_3d(self.imgs[img_id], box_2d, cl)
 
 
-          self.add_coco_bbox(
-            bbox, cat - 1, dets[cat][i, 12],
-            show_txt=show_txt, img_id=img_id, BPE=BPE, FPE=FPE)
+          # self.add_coco_bbox(
+          #   bbox, cat - 1, dets[cat][i, 12],
+          #   show_txt=show_txt, img_id=img_id, BPE=BPE, FPE=FPE)
 
 
           # import matplotlib.pyplot as plt

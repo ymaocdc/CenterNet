@@ -190,7 +190,8 @@ class opts(object):
                              help='regress FPE.')
     self.parser.add_argument('--reg_FPE_weight', type=float, default=1,
                              help='loss weight for regressing FPE.')
-
+    self.parser.add_argument('--crop_half', default=False, action='store_true', help='crop image half')
+    self.parser.add_argument('--crop_from', type=int, default=1018)
     self.parser.add_argument('--peak_thresh', type=float, default=0.2)
     
     # task

@@ -45,8 +45,9 @@ class PkuDetector(BaseDetector):
         inp_image = (inp_image.astype(np.float32) / 255.)
         inp_image = (inp_image - self.mean) / self.std
         images = inp_image.transpose(2, 0, 1)[np.newaxis, ...]
-        calib = np.array(calib, dtype=np.float32) if calib is not None \
-            else self.calib
+        # calib = np.array(calib, dtype=np.float32) if calib is not None \
+        #     else self.calib
+        calib = self.calib
         images = torch.from_numpy(images)
         meta = {'c': c, 's': s,
                 'out_height': inp_height // self.opt.down_ratio,

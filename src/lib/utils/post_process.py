@@ -39,6 +39,11 @@ def ddd_post_process_2d(dets, c, s, opt):
     dets[i, :, 19:21] = transform_preds(
       dets[i, :, 19:21], c[i], s[i], (opt.output_w, opt.output_h))
 
+    if opt.crop_half:
+      dets[i, :, 1] += opt.crop_from
+      dets[i, :, 16] += opt.crop_from
+      dets[i, :, 20] += opt.crop_from
+
     lbpe = transform_preds(
         np.array([dets[i, :, 21], xymax[:, 1]], dtype=np.float).transpose(), c[i], s[i], (opt.output_w, opt.output_h))
     rbpe = transform_preds(
