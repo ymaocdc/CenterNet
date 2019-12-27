@@ -147,8 +147,6 @@ class PKUDataset(data.Dataset):
                     [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2], dtype=np.float32)
                 ct_int = ct.astype(np.int32)
 
-
-
                 if cls_id < 0:
                     ignore_id = [_ for _ in range(num_classes)] \
                         if cls_id == - 1 else [- cls_id - 2]
@@ -162,8 +160,6 @@ class PKUDataset(data.Dataset):
 
                     continue
                 draw_gaussian(hm[cls_id], ct, radius)
-
-
 
                 alpha = ann['local_yaw']
                 alpha = np.remainder(alpha, np.pi*2)

@@ -139,24 +139,25 @@ def demo(opt):
         results = res2dict(ret, image_name, opt, center_thresh=0.2)
         with open(os.path.join(outputfolder, image_name.split('/')[-1].split('.')[0]+'.json'), 'w') as f_out:
             json.dump(results, f_out, indent=4, sort_keys=True, cls=NumpyEncoder)
-        # predictions[image_name.split('/')[-1].split('.j')[0]] = ''
-        # for cls_ind in ret:
-        #     for j in range(len(ret[cls_ind])):
-        #         bbox = ret[cls_ind][j][1:5]
-        #         xc = int((bbox[0] +bbox[2])//2)
-        #         yc = int((bbox[1] + bbox[3])//2)
-        #         if test_mask[yc, xc] > 125:
-        #             continue
-        #         yaw = ret[cls_ind][j][11]
-        #         pitch = ret[cls_ind][j][13]
-        #
-        #         if yaw > np.pi:
-        #             yaw = yaw-np.pi*2
-        #
-        #         s = [pitch, -yaw, -np.pi, ret[cls_ind][j][8], ret[cls_ind][j][9], ret[cls_ind][j][10],
-        #              ret[cls_ind][j][12]]
-        #         predictions[image_name.split('/')[-1].split('.j')[0]] += ' '
-        #         predictions[image_name.split('/')[-1].split('.j')[0]] += coords2str(s)
+
+        predictions[image_name.split('/')[-1].split('.j')[0]] = ''
+        for cls_ind in ret:
+            for j in range(len(ret[cls_ind])):
+                bbox = ret[cls_ind][j][1:5]
+                xc = int((bbox[0] +bbox[2])//2)
+                yc = int((bbox[1] + bbox[3])//2)
+                if test_mask[yc, xc] > 125:
+                    continue
+                yaw = ret[cls_ind][j][11]
+                pitch = ret[cls_ind][j][13]
+
+                if yaw > np.pi:
+                    yaw = yaw-np.pi*2
+
+                s = [pitch, -yaw, -np.pi, ret[cls_ind][j][8], ret[cls_ind][j][9], ret[cls_ind][j][10],
+                     ret[cls_ind][j][12]]
+                predictions[image_name.split('/')[-1].split('.j')[0]] += ' '
+                predictions[image_name.split('/')[-1].split('.j')[0]] += coords2str(s)
 
     test = pd.read_csv(os.path.join(opt.root_dir, 'sample_submission.csv'))
     for idx, image_id in enumerate(test['ImageId']):

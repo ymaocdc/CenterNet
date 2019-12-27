@@ -98,7 +98,7 @@ class Box(object):
             try_L_range = [self.L]
 
         if try_W:
-            try_W_range = np.arange(2)
+            try_W_range = np.arange(2,2.3,1)
         else:
              try_W_range = [self.W]
 

@@ -92,7 +92,7 @@ resutls_dir = '/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku/resutl
 files = glob.glob(os.path.join(resutls_dir, '*json'))
 print('number of files:', len(files))
 
-for file in tqdm(files[9:]):
+for file in tqdm(files[10:]):
     with open(file, 'r') as fin:
         res = json.load(fin)
     file = res['file']
