@@ -51,7 +51,22 @@ def draw_line(image, points):
     return image
 
 
-
+def draw_points(image, points):
+    for idx, (p_x, p_y, p_z) in enumerate(points):
+        if idx == 0:
+            color = (0, 0, 255)
+            size = 1
+        else:
+            color = (0, 0, 255)
+            size = 5
+        if idx == 1:
+            color = (0, 255, 0)
+            size = 5
+        if idx == 7:
+            color = (255, 0, 0)
+            size = 5
+        cv2.circle(image, (p_x, p_y), size, color, -1)
+    return image
 
 # image coordinate to world coordinate
 def img_cor_2_world_cor(img_cor_points, k):
@@ -190,56 +205,7 @@ def draw_obj(image, vertices, triangles):
 #         cv2.fillConvexPoly(image, coord, (0,0,255))
 #         cv2.polylines(image, np.int32([coord]), 1, (0,0,255))
 
-def map2d(x, y, z, w, h, l, yaw, pitch, roll):
-    Rt = np.eye(4)
-    t = np.array([x, y, z])
-    Rt[:3, 3] = t
-    Rt[:3, :3] = euler_to_Rot(yaw, pitch, roll).T
-    Rt = Rt[:3, :]
-    x_l, y_l, z_l = w / 2, h / 2, l / 2
-    P = np.array([[0, 0, 0, 1],
-                  [x_l, y_l, -z_l, 1],
-                  [x_l, y_l, z_l, 1],
-                  [-x_l, y_l, z_l, 1],
-                  [-x_l, y_l, -z_l, 1],
-                  [x_l, -y_l, -z_l, 1],
-                  [x_l, -y_l, z_l, 1],
-                  [-x_l, -y_l, z_l, 1],
-                  [-x_l, -y_l, -z_l, 1]]).T
-    img_cor_points = np.dot(k, np.dot(Rt, P))
-    img_cor_points = img_cor_points.T
-    img_cor_points[:, 0] /= img_cor_points[:, 2]
-    img_cor_points[:, 1] /= img_cor_points[:, 2]
-    return img_cor_points
-def draw_points(image, points):
-    for idx, (p_x, p_y, p_z) in enumerate(points):
-        if idx == 0:
-            color = (0, 0, 255)
-            size = 15
-        else:
-            color = (0, 0, 255)
-            size = 15
-        if idx == 1:
-            color = (0, 255, 0)
-            size = 15
-        if idx == 7:
-            color = (0, 255, 255)
-            size = 15
-        cv2.circle(image, (p_x, p_y), size, color, -1)
-    return image
 if __name__ == "__main__":
-
-    # x, y, z, w, h, l, yaw, pitch, roll = -2,2,10,2,1.6,6, 0.1, 0.15, 0
-    # img_cor_points = map2d(x, y, z, w, h, l, yaw, pitch, roll)
-    # img_cor_points = img_cor_points.astype(int)
-    # img = np.zeros((2710, 3384, 3), dtype=np.uint8)
-    # img = draw_points(img, img_cor_points)
-    # img = draw_line(img, img_cor_points)
-    # plt.clf()
-    # plt.imshow(img[:,:,::-1])
-    # plt.show()
-
-
     # a label and all meta information
     Label = namedtuple('Label', [
 
@@ -342,7 +308,7 @@ if __name__ == "__main__":
 
     plt.close()
     plt.rcParams["axes.grid"] = False
-    output_folder = '/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku/with_mask_labels'
+    output_folder = '/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku/vis_train'
 
     import glob
     imgs = glob.glob(os.path.join('/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku/data/images/train_images/', '*jpg'))
@@ -355,43 +321,41 @@ if __name__ == "__main__":
 
         img_name = train.loc[id]['ImageId']
         pred_string = train.loc[id]['PredictionString']
-        # if 'ID_0289b0bc8' not in img_name:
-        #     continue
+
         # if os.path.exists(os.path.join(output_folder, img_name + '.json')):
         #     continue
 
         image = cv2.imread('/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku/data/images/train_images/' + img_name + '.jpg')
-        img = image.copy()
         # fig, ax = plt.subplots(figsize=(40, 40))
+        img = np.array(image[:,:,::-1])
         items = pred_string.split(' ')
         model_types, yaws, pitches, rolls, xs, ys, zs = [items[i::7] for i in range(7)]
         for car_model, yaw, pitch, roll, x, y, z in zip(model_types, yaws, pitches, rolls, xs, ys, zs):
             overlay = np.zeros((image.shape[0], image.shape[1],3), dtype=np.uint8)
             obj = {}
             yaw, pitch, roll, x, y, z = [float(x) for x in [yaw, pitch, roll, x, y, z]]
-            # convert 3d bbox back to 2d. 9 points returned.
-            # I think the pitch and yaw should be exchanged
-            yaw, pitch, roll = -pitch, -yaw, -roll
-            ##very import , convert from --pi-pi to 0- 2pn
-            if yaw < 0:
-                yaw = yaw + np.pi * 2
-
             data, car_name = load_3dlabel(car_model)
 
             vertices = np.array(data['vertices'])
             vertices[:, 1] = -vertices[:, 1]
             triangles = np.array(data['faces']) - 1
-            W,H,L = vertices.max(axis=0) - vertices.min(axis=0)
+            w, h, l = vertices.max(axis=0) - vertices.min(axis=0)
 
-            obj['global_yaw'] = yaw
-            obj['pitch'] = pitch
-            obj['roll'] = roll
             obj['3D_location'] = [x, y, z, np.sqrt(x**2+y**2+z**2)]
-            obj['3D_dimension'] = [W,H,L]
+            obj['3D_dimension'] = [w, h, l]
             obj['car_name'] = car_name
             obj['car_type'] = data['car_type']
 
-            #plot 3d mesh
+            # convert 3d bbox back to 2d. 9 points returned.
+            # I think the pitch and yaw should be exchanged
+            yaw, pitch, roll = -pitch, -yaw, -roll
+            ##very import , convert from --pi-pi to 0- 2pn
+            if yaw < 0:
+                yaw = yaw +np.pi*2
+            obj['global_yaw'] = yaw
+            obj['pitch'] = pitch
+            obj['roll'] = roll
+
             Rt = np.eye(4)
             t = np.array([x, y, z])
             Rt[:3, 3] = t
@@ -406,7 +370,6 @@ if __name__ == "__main__":
             img_cor_points[:, 1] /= img_cor_points[:, 2]
             overlay = draw_obj(overlay, img_cor_points, triangles)
 
-            #find out 2d bbox
             xmin = img_cor_points[:, 0].min()
             xmax = img_cor_points[:, 0].max()
             ymin = img_cor_points[:, 1].min()
@@ -418,7 +381,10 @@ if __name__ == "__main__":
             obj['2D_bbox_xyxy'] = [int(xmin), int(ymin), int(xmax), int(ymax)]
             obj['2D_bbox_xywh'] = [xc, yc, w, h]
 
+            # bbox = cvt_2d_bbx(img_cor_points)
 
+            vertices = np.array(data['vertices'])
+            vertices[:, 1] = -vertices[:, 1]
             P = np.ones((vertices.shape[0], vertices.shape[1] + 1))
             P[:, :-1] = vertices
             P = P.T
@@ -436,7 +402,6 @@ if __name__ == "__main__":
             local_yaw = yaw-theta
             if local_yaw < 0:
                 local_yaw = 2*np.pi +local_yaw
-            local_yaw = np.remainder(local_yaw, np.pi*2)
             obj['local_yaw'] = local_yaw
             obj['theta'] = theta
 
@@ -500,37 +465,52 @@ if __name__ == "__main__":
 
             gt['objects'].append(obj)
 
-
-
-            #code to check coordinate
             # cv2.rectangle(img, (obj['2D_bbox_xyxy'][0], obj['2D_bbox_xyxy'][1]), (obj['2D_bbox_xyxy'][2], obj['2D_bbox_xyxy'][3]), (255, 0,0) , 5)
-            # cv2.line(img, (obj['FPE_left'][0], obj['2D_bbox_xyxy'][1]), (obj['FPE_left'][0], obj['2D_bbox_xyxy'][3]),
-            #          (0, 255, 255), 5)
+            # cv2.line(img, (obj['FPE_left'][0], obj['2D_bbox_xyxy'][1]), (obj['FPE_left'][0], obj['2D_bbox_xyxy'][3]), (255, 255,0) , 5)
             # cv2.line(img, (obj['FPE_right'][0], obj['2D_bbox_xyxy'][1]), (obj['FPE_right'][0], obj['2D_bbox_xyxy'][3]),
             #          (0, 255, 0), 5)
-            # cv2.line(img, (obj['BPE_left'][0], obj['2D_bbox_xyxy'][1]), (obj['BPE_left'][0], obj['2D_bbox_xyxy'][3]),
-            #          (0, 0, 255), 5)
-            # cv2.line(img, (obj['BPE_right'][0], obj['2D_bbox_xyxy'][1]), (obj['BPE_right'][0], obj['2D_bbox_xyxy'][3]),
-            #          (255, 255, 0), 5)
-            # img_cor_points = map2d(x, y, z,W,H,L, -yaw, -pitch, 0)
-            # img_cor_points = img_cor_points.astype(int)
-            # # img = draw_points(img, img_cor_points)
-            # img = draw_line(img, img_cor_points)
-            # plt.clf()
-            # plt.imshow(img[:, :, ::-1])
-            # plt.show()
 
-            # cv2.rectangle(img, (obj['2D_bbox_xyxy'][0], obj['2D_bbox_xyxy'][1]),
-            #               (obj['2D_bbox_xyxy'][2], obj['2D_bbox_xyxy'][3]), (0, 0, 255), 5)
-        with open(os.path.join(output_folder, img_name + '.json'), 'w') as fout:
-            json.dump(gt, fout, cls=NumpyEncoder)
+
+            Rt = np.eye(4)
+            t = np.array([x, y, z])
+            Rt[:3, 3] = t
+            Rt[:3, :3] = euler_to_Rot(yaw, pitch, roll).T
+            Rt = Rt[:3, :]
+            vertices = np.array(data['vertices'])
+            vertices[:, 1] = -vertices[:, 1]
+            triangles = np.array(data['faces']) - 1
+            w, h, l = vertices.max(axis=0) - vertices.min(axis=0)
+            x_l, y_l, z_l = w/2, h/2, l/2
+            P = np.array([[0, 0, 0, 1],
+                          [x_l, y_l, -z_l, 1],
+                          [x_l, y_l, z_l, 1],
+                          [-x_l, y_l, z_l, 1],
+                          [-x_l, y_l, -z_l, 1],
+                          [x_l, -y_l, -z_l, 1],
+                          [x_l, -y_l, z_l, 1],
+                          [-x_l, -y_l, z_l, 1],
+                          [-x_l, -y_l, -z_l, 1]]).T
+            img_cor_points = np.dot(k, np.dot(Rt, P))
+            img_cor_points = img_cor_points.T
+            img_cor_points[:, 0] /= img_cor_points[:, 2]
+            img_cor_points[:, 1] /= img_cor_points[:, 2]
+            # call this function before chage the dtype
+            # img_cor_2_world_cor()
+            img_cor_points = img_cor_points.astype(int)
+            img = draw_points(img, img_cor_points)
+            img = draw_line(img, img_cor_points)
+
+            cv2.rectangle(img, (obj['2D_bbox_xyxy'][0], obj['2D_bbox_xyxy'][1]),
+                          (obj['2D_bbox_xyxy'][2], obj['2D_bbox_xyxy'][3]), (0, 0, 255), 5)
+        # with open(os.path.join(output_folder, img_name + '.json'), 'w') as fout:
+        #     json.dump(gt, fout, cls=NumpyEncoder)
 
         # image = Image.fromarray(img)
         # alpha = .5
         # img = np.array(img)
         # cv2.addWeighted(overlay, alpha, img, 1 - alpha, 0, img)
-        # fig = plt.figure(figsize=(7, 7))
-        # plt.imshow(img)
+        plt.figure(figsize=(20, 20))
+        plt.imshow(img)
+        plt.savefig(os.path.join(output_folder, img_name + '.jpg'))
         # plt.show()
-        # plt.close(fig)
 
