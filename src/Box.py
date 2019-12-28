@@ -3,7 +3,7 @@ from math import sin, cos
 import matplotlib.pyplot as plt
 import cv2
 class Box(object):
-    def __init__(self, xmin, ymin, xmax, ymax, bpe_l, bpe_r, fpe_l, fpe_r, K, L, W, H, tx, ty, tz, pitch, cropped, classifier):
+    def __init__(self, xmin, ymin, xmax, ymax, bpe_l, bpe_r, fpe_l, fpe_r, K, L, W, H, tx, ty, tz, pitch, center3d=None):
 
         # if not bpe_l is None or not bpe_r is None:
         #     bpe_l, bpe_r = self.fix_bpe(xmin, xmax, bpe_l, bpe_r, cropped)
@@ -16,7 +16,7 @@ class Box(object):
         self.bpe_r = bpe_r
         self.fpe_l = fpe_l
         self.fpe_r = fpe_r
-
+        self.center3d = center3d
         self.K = K
         if type(K) is list:
             self.K = np.array(K).reshape((3, 3))
@@ -24,7 +24,6 @@ class Box(object):
         self.L = L
         self.W = W
         self.H = H
-        self.cropped = cropped
         self.valid =self.check_val()
         self.get_direction_visability()
 
@@ -33,7 +32,6 @@ class Box(object):
         self.global_yaw = None
         self.tx, self.ty, self.tz = tx, ty, tz
         self.img_cor_points, self.world_cor_points = None, None
-        self.classifier = classifier
 
     def lift_to_3d(self, mode='optimization'):
         """
@@ -48,8 +46,10 @@ class Box(object):
 
         """
         if self.valid.sum() >=2:
-            self.theta_ray = self.get_theta_ray(cx=(self.xmin + self.xmax) / 2, intrisics=self.K)
-
+            if self.center3d is None:
+                self.theta_ray = self.get_theta_ray(cx=(self.xmin + self.xmax) / 2, intrisics=self.K)
+            else:
+                self.theta_ray = self.get_theta_ray(cx=self.center3d[0], intrisics=self.K)
 
             if self.bpe_l < self.bpe_r:
                 self.local_yaw = self.get_local_yaw_when_far(self.xmin, self.xmax, self.bpe_l, self.bpe_r, aspect_ratio=self.L/self.W)
@@ -280,6 +280,8 @@ class Box(object):
         bpe_width = bpe_r - bpe_l
         margin_right = xmax - bpe_r
         margin_left = bpe_l - xmin
+        if not (width > 0 and bpe_width > 0 and margin_left >= 0 and margin_right >= 0):
+            print(xmin, xmax, bpe_l, bpe_r)
         assert width > 0 and bpe_width > 0 and margin_left >= 0 and margin_right >= 0
         alpha = bpe_width / width
         heading_right = margin_right > margin_left
@@ -423,8 +425,10 @@ class Box(object):
                     self.vis = 0
             elif self.valid[0]:
                 self.vis = 0
+                self.xmax = self.bpe_r
             elif self.valid[1]:
                 self.vis = 1
+                self.xmin = self.bpe_l
             else:
                 if self.bpe_l > self.xmax:
                     self.xmax = self.bpe_r
@@ -443,8 +447,10 @@ class Box(object):
                     self.vis = 2
             elif self.valid[2]:
                 self.vis = 2
+                self.xmin = self.fpe_r
             elif self.valid[3]:
                 self.vis = 3
+                self.xmax = self.fpe_l
             else:
                 if self.fpe_l < self.xmin:
                     self.xmin = self.fpe_r

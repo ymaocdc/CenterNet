@@ -140,12 +140,16 @@ def ddd_post_process_3d(dets, calibs, opt):
           BPE = dets[i][cls_ind][j][13:15]
           pred = pred + BPE.tolist()
         else:
-          pred = pred + [None]
+          pred = pred + [None, None]
         if opt.reg_FPE:
           FPE = dets[i][cls_ind][j][15:17]
           pred = pred + FPE.tolist()
         else:
-          pred = pred + [None]
+          pred = pred + [None, None]
+        if opt.reg_3d_center:
+          pred = pred + center3d.tolist()
+        else:
+          pred = pred + [None, None]
 
         preds[cls_ind].append(pred)
       preds[cls_ind] = np.array(preds[cls_ind], dtype=np.float32)

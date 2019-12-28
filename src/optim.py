@@ -87,12 +87,12 @@ def draw_bpe(img, bpe_l, bpe_r, ymin, ymax, color=(0,255,255), linewidth=2):
 def toint(x):
     return [int(i) for i in x]
 
-resutls_dir = '/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku/resutls'
+resutls_dir = '/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku/resutls/pku_everything_equalweight'
 
 files = glob.glob(os.path.join(resutls_dir, '*json'))
 print('number of files:', len(files))
 
-for file in tqdm(files[10:]):
+for file in tqdm(files):
     with open(file, 'r') as fin:
         res = json.load(fin)
     file = res['file']
@@ -106,7 +106,7 @@ for file in tqdm(files[10:]):
         H, W, L = obj['dim']
         tx, ty, tz = obj['loc']
         pitch = obj['pitch']
-
+        center3d = obj['center3d']
 
         cv2.rectangle(im, (xmin, ymin), (xmax, ymax), (255,255,255), 5)
 
@@ -128,7 +128,7 @@ for file in tqdm(files[10:]):
         # plt.imshow(im[:,:,::-1])
         # plt.show()
         # plt.close(fig)
-        box3d = Box(xmin, ymin, xmax, ymax, bpe_l, bpe_r, fpe_l, fpe_r, calib, L, W, H, tx, ty, tz, pitch, None, None)
+        box3d = Box(xmin, ymin, xmax, ymax, bpe_l, bpe_r, fpe_l, fpe_r, calib, L, W, H, tx, ty, tz, pitch, center3d)
         box3d.lift_to_3d()
 
 
