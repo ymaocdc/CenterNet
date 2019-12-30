@@ -107,10 +107,15 @@ class PkuDetector(BaseDetector):
             image, results, self.this_calib, self.opt,
             center_thresh=self.opt.vis_thresh, img_id='add_pred')
         if self.opt.debug > 0:
-            fig = plt.figure(figsize=(20, 20))
+            fig = plt.figure(figsize=(19, 20))
+            ax = plt.Axes(fig, [0., 0., 1., 1.])
+            ax.set_axis_off()
             plt.imshow(image[:,:,::-1])
-            # plt.savefig(os.path.join(self.opt.output_dir, image_or_path_or_tensor.split('/')[-1]))
-            plt.show()
+
+            plt.savefig(os.path.join(self.opt.output_dir, image_or_path_or_tensor.split('/')[-1]), bbox_inches='tight', pad_inches=0, transparent=True)
+            # plt.show()
+
+            plt.close(fig)
         debugger.add_bird_view(
             results, self.opt, center_thresh=self.opt.vis_thresh, img_id='bird_pred')
         # debugger.show_all_imgs(pause=self.pause)

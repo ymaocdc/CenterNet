@@ -11,7 +11,7 @@ from opts import opts
 import numpy as np
 from Box import Box
 from detectors.detector_factory import detector_factory
-
+import matplotlib as plt
 image_ext = ['jpg', 'jpeg', 'png', 'webp']
 video_ext = ['mp4', 'mov', 'avi', 'mkv']
 time_stats = ['tot', 'load', 'pre', 'net', 'dec', 'post', 'merge']
@@ -89,14 +89,95 @@ def coords2str(coords, names=['yaw', 'pitch', 'roll', 'x', 'y', 'z', 'confidence
     for c in coords:
         s.append(str(c))
     return ' '.join(s)
+def toint(x):
+    return [int(i) for i in x]
+def draw_lines(img, points, linewidth=3, style='allw'):
+
+    if style == 'fb':#front back
+        color = (0, 0, 255)
+        cv2.line(img, tuple(points[2][:2]), tuple(points[3][:2]), color, linewidth)
+        cv2.line(img, tuple(points[3][:2]), tuple(points[7][:2]), color, linewidth)
+        cv2.line(img, tuple(points[6][:2]), tuple(points[7][:2]), color, linewidth)
+        cv2.line(img, tuple(points[2][:2]), tuple(points[6][:2]), color, linewidth)
+        color = (255, 0, 0)
+        cv2.line(img, tuple(points[1][:2]), tuple(points[2][:2]), color, linewidth)
+        cv2.line(img, tuple(points[3][:2]), tuple(points[4][:2]), color, linewidth)
+        cv2.line(img, tuple(points[5][:2]), tuple(points[6][:2]), color, linewidth)
+        cv2.line(img, tuple(points[7][:2]), tuple(points[8][:2]), color, linewidth)
+        color = (0, 255, 0)
+        cv2.line(img, tuple(points[1][:2]), tuple(points[5][:2]), color, linewidth)
+        cv2.line(img, tuple(points[5][:2]), tuple(points[8][:2]), color, linewidth)
+        cv2.line(img, tuple(points[4][:2]), tuple(points[8][:2]), color, linewidth)
+        cv2.line(img, tuple(points[1][:2]), tuple(points[4][:2]), color, linewidth)
+    elif style == 'tb':# top bottom
+        color = (0, 0, 255)
+        cv2.line(img, tuple(points[5][:2]), tuple(points[8][:2]), color, linewidth)
+        cv2.line(img, tuple(points[5][:2]), tuple(points[6][:2]), color, linewidth)
+        cv2.line(img, tuple(points[6][:2]), tuple(points[7][:2]), color, linewidth)
+        cv2.line(img, tuple(points[7][:2]), tuple(points[8][:2]), color, linewidth)
+
+        color = (255, 0, 0)
+        cv2.line(img, tuple(points[1][:2]), tuple(points[2][:2]), color, linewidth)
+        cv2.line(img, tuple(points[3][:2]), tuple(points[4][:2]), color, linewidth)
+        cv2.line(img, tuple(points[2][:2]), tuple(points[3][:2]), color, linewidth)
+        cv2.line(img, tuple(points[1][:2]), tuple(points[4][:2]), color, linewidth)
+
+        color = (0, 255, 0)
+        cv2.line(img, tuple(points[3][:2]), tuple(points[7][:2]), color, linewidth)
+        cv2.line(img, tuple(points[2][:2]), tuple(points[6][:2]), color, linewidth)
+        cv2.line(img, tuple(points[1][:2]), tuple(points[5][:2]), color, linewidth)
+        cv2.line(img, tuple(points[4][:2]), tuple(points[8][:2]), color, linewidth)
+    elif style == 'allw':#front back
+        color = (255, 255, 255)
+        cv2.line(img, tuple(points[2][:2]), tuple(points[3][:2]), color, linewidth)
+        cv2.line(img, tuple(points[3][:2]), tuple(points[7][:2]), color, linewidth)
+        cv2.line(img, tuple(points[6][:2]), tuple(points[7][:2]), color, linewidth)
+        cv2.line(img, tuple(points[2][:2]), tuple(points[6][:2]), color, linewidth)
+        # color = (255, 0, 0)
+        cv2.line(img, tuple(points[1][:2]), tuple(points[2][:2]), color, linewidth)
+        cv2.line(img, tuple(points[3][:2]), tuple(points[4][:2]), color, linewidth)
+        cv2.line(img, tuple(points[5][:2]), tuple(points[6][:2]), color, linewidth)
+        cv2.line(img, tuple(points[7][:2]), tuple(points[8][:2]), color, linewidth)
+        # color = (0, 255, 0)
+        cv2.line(img, tuple(points[1][:2]), tuple(points[5][:2]), color, linewidth)
+        cv2.line(img, tuple(points[5][:2]), tuple(points[8][:2]), color, linewidth)
+        cv2.line(img, tuple(points[4][:2]), tuple(points[8][:2]), color, linewidth)
+        cv2.line(img, tuple(points[1][:2]), tuple(points[4][:2]), color, linewidth)
+    else:
+        assert print('wrong input style')
+    return img
+
+def draw_corners(img, points):
+    "Draw 8 corners and centroid of 3d bbox on image"
+    for idx, (p_x, p_y, p_z) in enumerate(points):
+        if idx == 0:
+            color = (0, 128, 255)
+        elif idx == 1:
+            color = (0, 255, 255)
+        elif idx == 7:
+            color = (255, 0, 0)
+        else:
+            color = (255, 255, 0)
+        cv2.circle(img, (p_x, p_y), 3, color, -1)
+    return img
 
 def demo(opt):
+
+  use_optimization = True
+  debug = False
+  calib = np.array([[2304.5479, 0, 1686.2379],
+                    [0, 2305.8757, 1354.9849],
+                    [0, 0, 1]], dtype=np.float32)
+
   os.environ['CUDA_VISIBLE_DEVICES'] = opt.gpus_str
   # opt.debug = max(opt.debug, 1)
   Detector = detector_factory[opt.task]
   detector = Detector(opt)
 
-  outputfolder = os.path.join(opt.root_dir, 'resutls', 'val_'+opt.load_model.split('/')[-2])
+  if not use_optimization:
+    outputfolder = os.path.join(opt.root_dir, 'resutls', 'val_'+opt.load_model.split('/')[-2])
+  else:
+    outputfolder = os.path.join(opt.root_dir, 'resutls', 'val_use_optimization' + opt.load_model.split('/')[-2])
   if not os.path.exists(outputfolder):
       os.mkdir(outputfolder)
 
@@ -125,7 +206,7 @@ def demo(opt):
     else:
       image_names = [opt.demo]
     test_masks_dir = '/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku/test_masks'
-    predictions = {}
+
     image_names.sort()
     image_names = image_names[4000:]
     image_ids = []
@@ -149,7 +230,6 @@ def demo(opt):
         else:
             test_mask = np.ones((2710, 3384), dtype=np.uint8)*0
 
-        # tmp_pred = ''
         tmp_pred = []
         for cls_ind in ret:
             for j in range(len(ret[cls_ind])):
@@ -158,16 +238,52 @@ def demo(opt):
                 yc = int((bbox[1] + bbox[3])//2)
                 if test_mask[yc, xc] > 125:
                     continue
-                yaw = ret[cls_ind][j][11]
+
                 pitch = ret[cls_ind][j][13]
+                if use_optimization:
+                    xmin, ymin, xmax, ymax = toint(ret[cls_ind][j, 1:5])
+                    bpe_l, bpe_r = toint(ret[cls_ind][j, 14:16])
+                    fpe_l, fpe_r = toint(ret[cls_ind][j, 16:18])
+                    H, W, L = ret[cls_ind][j, 5:8]
+                    tx, ty, tz = ret[cls_ind][j, 8:11]
+                    pitch = ret[cls_ind][j, 13]
+                    center3d = ret[cls_ind][j, 18:20]
+                    try:
+                        box3d = Box(xmin, ymin, xmax, ymax, bpe_l, bpe_r, fpe_l, fpe_r, calib, L, W, H, tx, ty, tz, pitch,
+                                    center3d)
+                        box3d.lift_to_3d()
+                        if debug:
+                            img_cor_points = box3d.img_cor_points
+                            if not img_cor_points is None:
+                                img_cor_points = img_cor_points
+                                img = draw_corners(img, img_cor_points)
+                                img = draw_lines(img, img_cor_points, style='fb')
+                                text = '{} {} {}'.format(np.round(box3d.tx, 1), np.round(box3d.ty, 1),
+                                                         np.round(box3d.tz, 1))
+                                cv2.putText(img, text, tuple((img_cor_points[1][0] - 5, img_cor_points[1][1] - 20)), 1, 0.5,
+                                            (0, 50, 255), 1, cv2.LINE_AA)
+                                text = '{} {} {}'.format(np.round(box3d.L, 1),
+                                                         np.round(box3d.W, 1), np.round(box3d.H, 1))
+                                cv2.putText(img, text, tuple(img_cor_points[1][:2] - 5), 1, 0.5, (0, 50, 255), 1,
+                                            cv2.LINE_AA)
+                            fig = plt.figure(figsize=(10, 10))
+                            plt.imshow(img[:, :, ::-1])
+                            plt.show()
+                            plt.close(fig)
+                        yaw = box3d.global_yaw
+                    except:
+                        yaw = ret[cls_ind][j][11]
+
+                    if yaw is None:
+                        yaw = ret[cls_ind][j][11]
+                else:
+                    yaw = ret[cls_ind][j][11]
 
                 if yaw > np.pi:
                     yaw = yaw-np.pi*2
 
                 s = [pitch, yaw, -np.pi, ret[cls_ind][j][8], ret[cls_ind][j][9], ret[cls_ind][j][10],
                      ret[cls_ind][j][12]]
-                # tmp_pred += ' '
-                # tmp_pred += coords2str(s)
                 tmp_pred.append(coords2str(s))
         tmp_pred = ' '.join(tmp_pred)
 
@@ -175,21 +291,17 @@ def demo(opt):
         image_ids.append(image_name.split('/')[-1].split('.j')[0])
         val_pred.append(tmp_pred)
 
-    # test = pd.read_csv(os.path.join(opt.root_dir, 'sample_submission.csv'))
-    # for idx, image_id in enumerate(test['ImageId']):
-    #     test['PredictionString'][idx] = predictions[image_id]
-
     data = {
         'ImageId': image_ids,
         'PredictionString': val_pred,
     }
     val_df = pd.DataFrame(data=data)
-    save_to = os.path.join(opt.root_dir, 'submission/{}_val.csv'.format(opt.load_model.split('/')[-2]))
+    if not use_optimization:
+        save_to = os.path.join(opt.root_dir, 'submission/{}_val.csv'.format(opt.load_model.split('/')[-2]))
+    else:
+        save_to = os.path.join(opt.root_dir, 'submission/{}_val_use_optimization.csv'.format(opt.load_model.split('/')[-2]))
     val_df.to_csv(save_to, index=False)
 
-
-    # test.to_csv(os.path.join(opt.root_dir, 'submission/{}_val.csv'.format(opt.load_model.split('/')[-2])), index=False)
-    # test.head()
     print(save_to)
 
 if __name__ == '__main__':

@@ -133,10 +133,11 @@ def res2dict(dets, image_name, opt, center_thresh=0.2):
                 loc  = dets[cat][i, 8:11]
                 rot_y = dets[cat][i, 11]
                 bbox = dets[cat][i, 1:5]
-                obj['dim'] = dim
-                obj['loc'] = loc
-                obj['bbox'] = bbox
-
+                obj['3D_dimension'] = dim
+                obj['3D_location'] = loc
+                obj['2D_bbox_xyxy'] = bbox
+                obj['global_yaw'] = rot_y
+                obj['conf_score'] = dets[cat][i, 12]
                 if opt.reg_pitch:
                     obj['pitch'] = dets[cat][i, 13]
                 else:
@@ -149,6 +150,7 @@ def res2dict(dets, image_name, opt, center_thresh=0.2):
                     obj['FPE'] = dets[cat][i, 16:18]
                 else:
                     obj['FPE'] = None
+
 
                 result['objects'].append(obj)
     return result
@@ -168,9 +170,15 @@ def demo(opt):
   Detector = detector_factory[opt.task]
   detector = Detector(opt)
 
-  outputfolder = os.path.join(opt.root_dir, 'resutls', opt.load_model.split('/')[-2]+'_optim')
-  if not os.path.exists(outputfolder):
-      os.mkdir(outputfolder)
+  model_outputfolder = os.path.join(opt.root_dir, 'resutls', opt.load_model.split('/')[-2]+'_optim')
+  if not os.path.exists(model_outputfolder):
+      os.mkdir(model_outputfolder)
+  if not os.path.exists(os.path.join(opt.root_dir, 'optim_resutls')):
+      os.mkdir(os.path.join(opt.root_dir, 'optim_resutls'))
+  optim_output_folder = os.path.join(opt.root_dir, 'optim_resutls', opt.load_model.split('/')[-2]+'_optim')
+  if not os.path.exists(optim_output_folder):
+      os.mkdir(optim_output_folder)
+
   test_masks_dir = '/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku/test_masks'
 
   debug = False
@@ -221,11 +229,11 @@ def demo(opt):
             test_mask = np.ones((2710, 3384), dtype=np.uint8)*0
 
         ret = ret['results']
-        results = res2dict(ret, image_name, opt, center_thresh=0.2)
-        with open(os.path.join(outputfolder, image_name.split('/')[-1].split('.')[0]+'.json'), 'w') as f_out:
+        results = res2dict(ret, image_name, opt, center_thresh=0)
+        with open(os.path.join(model_outputfolder, image_name.split('/')[-1].split('.')[0]+'.json'), 'w') as f_out:
             json.dump(results, f_out, indent=4, sort_keys=True, cls=NumpyEncoder)
 
-        predictions[image_name.split('/')[-1].split('.j')[0]] = ''
+        predictions[image_name.split('/')[-1].split('.j')[0]] = []
         for cls_ind in ret:
             for j in range(len(ret[cls_ind])):
                 bbox = ret[cls_ind][j][1:5]
@@ -265,13 +273,21 @@ def demo(opt):
 
                 if yaw is None:
                     yaw = ret[cls_ind][j][11]
+
+                # replace the yaw and save the optimization result to json for mlp later
+                ret[cls_ind][j][11] = yaw
+                optm_results = res2dict(ret, image_name, opt, center_thresh=0)
+                with open(os.path.join(optim_output_folder, image_name.split('/')[-1].split('.')[0] + '.json'),
+                          'w') as f_out:
+                    json.dump(optm_results, f_out, indent=4, sort_keys=True, cls=NumpyEncoder)
+
                 if yaw > np.pi:
                     yaw = yaw-np.pi*2
 
                 s = [pitch, yaw, -np.pi, ret[cls_ind][j][8], ret[cls_ind][j][9], ret[cls_ind][j][10],
                      ret[cls_ind][j][12]]
-                predictions[image_name.split('/')[-1].split('.j')[0]] += ' '
-                predictions[image_name.split('/')[-1].split('.j')[0]] += coords2str(s)
+                predictions[image_name.split('/')[-1].split('.j')[0]].append(coords2str(s))
+        predictions[image_name.split('/')[-1].split('.j')[0]] = ' '.join(predictions[image_name.split('/')[-1].split('.j')[0]])
 
     test = pd.read_csv(os.path.join(opt.root_dir, 'sample_submission.csv'))
     for idx, image_id in enumerate(test['ImageId']):

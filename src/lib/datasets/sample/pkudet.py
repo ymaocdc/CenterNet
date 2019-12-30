@@ -199,7 +199,7 @@ class PKUDataset(data.Dataset):
                         rotres[k, 0] = alpha
                     else:
                         rotres[k, 0] = alpha-np.pi*2
-                if alpha < np.pi/2-np.pi/6. or alpha < np.pi/2*3+np.pi/6:
+                if alpha > np.pi/2-np.pi/6. or alpha < np.pi/2*3+np.pi/6:
                     alpha = alpha-np.pi
                     rotbin[k, 1] = 1
                     rotres[k, 1] = alpha

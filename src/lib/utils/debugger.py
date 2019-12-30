@@ -426,13 +426,14 @@ class Debugger(object):
           # call this function before chage the dtype
           # img_cor_2_world_cor()
 
-          img_cor_points = img_cor_points.astype(int)
-          self.imgs[img_id] = self.draw_line(self.imgs[img_id], img_cor_points)
-          self.imgs[img_id] = self.draw_points(self.imgs[img_id], img_cor_points)
+          # img_cor_points = img_cor_points.astype(int)
+          # self.imgs[img_id] = self.draw_line(self.imgs[img_id], img_cor_points)
+          # self.imgs[img_id] = self.draw_points(self.imgs[img_id], img_cor_points)
 
-          # self.add_coco_bbox(
-          #   bbox, cat - 1, dets[cat][i, 12],
-          #   show_txt=show_txt, img_id=img_id, BPE=BPE, FPE=FPE)
+          cv2.circle(self.imgs[img_id], (int(img_cor_points[0,0]), int(img_cor_points[0,1])), 10, (0,0,255), -1)
+          self.add_coco_bbox(
+            bbox, cat - 1, dets[cat][i, 12],
+            show_txt=show_txt, img_id=img_id, BPE=BPE, FPE=FPE)
 
           # import matplotlib.pyplot as plt
           # plt.imshow(self.imgs[img_id][:,:,::-1])
