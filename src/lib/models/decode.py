@@ -500,7 +500,6 @@ def ddd_decode(heat, rot, depth, dim, wh=None, reg=None, K=40, pitch=None, reg_3
     if roll is not None:
         roll = _transpose_and_gather_feat(roll, inds)
         roll = roll.view(batch, K, 1)
-        # roll =
     else:
         roll = torch.cuda.FloatTensor(batch, K, 1).fill_(0)
     detections = torch.cat([detections, roll], dim=2)

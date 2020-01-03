@@ -10,7 +10,7 @@ def coords2str(coords, names=['yaw', 'pitch', 'roll', 'x', 'y', 'z', 'confidence
 
 if __name__ == '__main__':
     root_dir = '/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku/submission'
-    csv_name = 'pku_everything_equalweight_5121024_flip_optim_fix_nms.csv'
+    csv_name = 'dim_rot_0_reg_roll_hourglass_5121024_optim_fix.csv'
     csv_file = os.path.join(root_dir, csv_name)
 
     train = pd.read_csv(csv_file)
@@ -55,6 +55,6 @@ if __name__ == '__main__':
     }
     val_df = pd.DataFrame(data=data)
 
-    save_to = os.path.join(root_dir, '{}_{}'.format('reverse_pitch', csv_name))
+    save_to = os.path.join(root_dir, '{}_{}'.format('neg_roll', csv_name))
     val_df.to_csv(save_to, index=False)
     print(save_to)

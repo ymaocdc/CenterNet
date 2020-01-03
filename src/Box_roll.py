@@ -70,7 +70,7 @@ class Box(object):
             self.img_cor_points, self.world_cor_points = self.map_to_2d(
                 self.tx, self.ty, self.tz,
                 self.L, self.W, self.H,
-                np.pi*2-self.global_yaw, self.pitch, -(np.pi+self.roll))
+                self.global_yaw, -self.pitch, -self.roll)
 
             # self.img_cor_points, self.world_cor_points = self.map_to_2d(
             #     self.tx, self.ty, self.tz,
@@ -137,10 +137,10 @@ class Box(object):
             for L in try_L_range:
                 for W in try_W_range:
                     for H in try_H_range :
-                        R = self.euler_to_Rot(np.pi*2-try_global_yaw, self.pitch, 0).T
+                        R = self.euler_to_Rot(-try_global_yaw, self.pitch, 0).T
 
                         xmin_candi, xmax_candi, ymin_candi, ymax_candi, \
-                        l_bpe_candi, r_bpe_candi, l_fpe_candi, r_fpe_candi = self.box3d_candidate(self.local_yaw, L, W, H,roll=np.pi+self.roll)
+                        l_bpe_candi, r_bpe_candi, l_fpe_candi, r_fpe_candi = self.box3d_candidate(self.local_yaw, L, W, H,)
 
                         try_xmax = self.xmax
                         try_xmin = self.xmin
@@ -331,14 +331,23 @@ class Box(object):
         z_l = L / 2
 
         # K[[I 0^T]T | [[RX_3d 1]T,[T 1]T] = X_2d
-        X3d = np.array([[-x_l, -y_l, -z_l],
-                        [-x_l, -y_l, z_l],
-                        [x_l, -y_l, z_l],
-                        [x_l, -y_l, -z_l],
-                        [-x_l, y_l, -z_l],
-                        [-x_l, y_l, z_l],
-                        [x_l, y_l, z_l],
-                        [x_l, y_l, -z_l]])
+        # X3d = np.array([[-x_l, -y_l, -z_l],
+        #                 [-x_l, -y_l, z_l],
+        #                 [x_l, -y_l, z_l],
+        #                 [x_l, -y_l, -z_l],
+        #                 [-x_l, y_l, -z_l],
+        #                 [-x_l, y_l, z_l],
+        #                 [x_l, y_l, z_l],
+        #                 [x_l, y_l, -z_l]])
+        X3d = np.array([
+                      [x_l, y_l, -z_l],
+                      [x_l, y_l, z_l],
+                      [-x_l, y_l, z_l],
+                      [-x_l, y_l, -z_l],
+                      [x_l, -y_l, -z_l],
+                      [x_l, -y_l, z_l],
+                      [-x_l, -y_l, z_l],
+                      [-x_l, -y_l, -z_l]])
         point1 = X3d[0, :]
         point2 = X3d[1, :]
         point3 = X3d[2, :]
@@ -352,55 +361,46 @@ class Box(object):
         xmin_candi = xmax_candi = ymin_candi = ymax_candi = l_bpe_candi = r_bpe_candi = l_fpe_candi = r_fpe_candi = None
 
         if 0 <= local_yaw < np.pi / 2:
-            xmin_candi = point5
-            xmax_candi = point7
-            ymin_candi = point2
-            ymax_candi = point8
-            l_bpe_candi = point1
-            r_bpe_candi = point4
-            l_fpe_candi = point6
-            r_fpe_candi = point3
-
-            # xmin_candi = point5
-            # xmax_candi = point7
-            # ymin_candi = point2
-            # ymax_candi = point8
-            # l_bpe_candi = point1
-            # r_bpe_candi = point4
-            # l_fpe_candi = point6
-            # r_fpe_candi = point3
+            xmin_candi = point4
+            xmax_candi = point2
+            ymin_candi = point7
+            ymax_candi = point1
+            l_bpe_candi = point8
+            r_bpe_candi = point5
+            l_fpe_candi = point3
+            r_fpe_candi = point6
 
         # note that here if facing towards ego car, bpe is actually fpe
         if np.pi / 2 <= local_yaw <= np.pi:
-            xmin_candi = point4
-            xmax_candi = point6
-            ymin_candi = point1
-            ymax_candi = point7
-            l_bpe_candi = point5
-            r_bpe_candi = point8
-            l_fpe_candi = point2
-            r_fpe_candi = point3
+            xmin_candi = point5
+            xmax_candi = point3
+            ymin_candi = point7
+            ymax_candi = point1
+            l_bpe_candi = point4
+            r_bpe_candi = point1
+            l_fpe_candi = point7
+            r_fpe_candi = point6
 
         # note that here if facing towards ego car, bpe is actually fpe
         if np.pi < local_yaw <= 3 / 2 * np.pi:
-            xmin_candi = point3
-            xmax_candi = point5
-            ymin_candi = point4
-            ymax_candi = point6
-            l_bpe_candi = point1
-            r_bpe_candi = point8
-            l_fpe_candi = point2
-            r_fpe_candi = point7
+            xmin_candi = point6
+            xmax_candi = point4
+            ymin_candi = point5
+            ymax_candi = point3
+            l_bpe_candi = point8
+            r_bpe_candi = point1
+            l_fpe_candi = point7
+            r_fpe_candi = point2
 
         if 3 * np.pi / 2 < local_yaw <= 2 * np.pi:
-            xmin_candi = point2
-            xmax_candi = point4
-            ymin_candi = point3
-            ymax_candi = point5
-            l_bpe_candi = point1
-            r_bpe_candi = point8
-            l_fpe_candi = point6
-            r_fpe_candi = point7
+            xmin_candi = point7
+            xmax_candi = point5
+            ymin_candi = point6
+            ymax_candi = point4
+            l_bpe_candi = point8
+            r_bpe_candi = point1
+            l_fpe_candi = point3
+            r_fpe_candi = point2
 
         div = soft_range * np.pi / 180
         if 0 < local_yaw < div or 2 * np.pi - div < local_yaw < 2 * np.pi:

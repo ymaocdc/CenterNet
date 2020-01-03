@@ -170,7 +170,7 @@ def demo(opt):
   Detector = detector_factory[opt.task]
   detector = Detector(opt)
 
-  model_outputfolder = os.path.join(opt.root_dir, 'model_prediction_resutls', opt.load_model.split('/')[-2]+'_optim')
+  model_outputfolder = os.path.join(opt.root_dir, 'model_prediction_resutls', opt.load_model.split('/')[-2]+'_optim_fix_res')
   if not os.path.exists(model_outputfolder):
       os.mkdir(model_outputfolder)
   if not os.path.exists(os.path.join(opt.root_dir, 'optim_resutls2')):
@@ -184,7 +184,7 @@ def demo(opt):
       os.mkdir(output_dir)
   opt.output_dir = output_dir
 
-  optim_output_folder = os.path.join(opt.root_dir, 'optim_resutls2', opt.load_model.split('/')[-2]+'_optim_fix')
+  optim_output_folder = os.path.join(opt.root_dir, 'optim_resutls2', opt.load_model.split('/')[-2]+'_optim_fix_res')
   if not os.path.exists(optim_output_folder):
       os.mkdir(optim_output_folder)
 
@@ -277,7 +277,7 @@ def demo(opt):
                             # text = '{} {} {}'.format(np.round(box3d.tx, 1), np.round(box3d.ty, 1), np.round(box3d.tz, 1))
                             # cv2.putText(img, text, tuple((img_cor_points[1][0] - 5, img_cor_points[1][1] - 20)), 1, 0.5,
                             #             (0, 50, 255), 1, cv2.LINE_AA)
-
+                    # print(np.rad2deg(box3d.global_yaw), np.rad2deg(ret[cls_ind][j][11]))
                     yaw = box3d.global_yaw
                 except:
                     yaw = ret[cls_ind][j][11]
@@ -300,7 +300,7 @@ def demo(opt):
             fig = plt.figure(figsize=(10, 10))
             plt.imshow(img[:, :, ::-1])
             plt.savefig(os.path.join(optim_output_folder, image_name.split('/')[-1].split('.')[0] + '.jpg'),  bbox_inches='tight', pad_inches=0)
-            # plt.show()
+            plt.show()
             plt.close(fig)
 
         optm_results = res2dict(ret, image_name, opt, center_thresh=0)
@@ -312,7 +312,7 @@ def demo(opt):
     for idx, image_id in enumerate(test['ImageId']):
         test['PredictionString'][idx] = predictions[image_id]
 
-    write_to = os.path.join(opt.root_dir, 'submission/{}_optim_fix.csv'.format(opt.load_model.split('/')[-2]))
+    write_to = os.path.join(opt.root_dir, 'submission/{}_optim_fix_res.csv'.format(opt.load_model.split('/')[-2]))
     test.to_csv(write_to, index=False)
     test.head()
     print(write_to)

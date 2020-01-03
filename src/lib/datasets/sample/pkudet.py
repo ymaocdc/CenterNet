@@ -204,7 +204,6 @@ class PKUDataset(data.Dataset):
                     reg_roll_mask[k] = 1
                     if flipped:
                         roll = -roll
-                        reg_roll_mask[k] = 0
                     reg_roll[k] = roll
                     gt_det[-1] = gt_det[-1] + [reg_roll[k][0]]
                 if self.opt.reg_3d_center:
