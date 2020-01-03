@@ -18,7 +18,11 @@ from utils.ddd_utils import compute_box_3d, project_to_image, alpha2rot_y
 from utils.ddd_utils import draw_box_3d, unproject_2d_to_3d
 
 from .base_detector import BaseDetector
-
+try:
+  from external.nms import soft_nms,nms
+except:
+  print('NMS not imported! If you need it,'
+        ' do \n cd $CenterNet_ROOT/src/lib/external \n make')
 
 class PkuDetector(BaseDetector):
     def __init__(self, opt):
@@ -64,6 +68,7 @@ class PkuDetector(BaseDetector):
             wh = output['wh'] if self.opt.reg_bbox else None
             reg = output['reg'] if self.opt.reg_offset else None
             pitch = output['reg_pitch'] if self.opt.reg_pitch else None
+            roll = output['reg_roll'] if self.opt.reg_roll else None
             reg_3d = output['reg_3d_ct'] if self.opt.reg_3d_center else None
             reg_BPE = output['reg_BPE'] if self.opt.reg_BPE else None
             reg_FPE = output['reg_FPE'] if self.opt.reg_FPE else None
@@ -71,7 +76,7 @@ class PkuDetector(BaseDetector):
             forward_time = time.time()
 
             dets = ddd_decode(output['hm'], output['rot'], output['dep'],
-                              output['dim'], wh=wh, reg=reg, K=self.opt.K, pitch=pitch, reg_3d=reg_3d, reg_BPE=reg_BPE, reg_FPE=reg_FPE)
+                              output['dim'], wh=wh, reg=reg, K=self.opt.K, pitch=pitch, reg_3d=reg_3d, reg_BPE=reg_BPE, reg_FPE=reg_FPE, roll=roll)
         if return_time:
             return output, dets, forward_time
         else:
@@ -86,11 +91,23 @@ class PkuDetector(BaseDetector):
 
     def merge_outputs(self, detections):
         results = detections[0]
+        new_results = []
+
         for j in range(1, self.num_classes + 1):
             if len(results[j] > 0):
                 keep_inds = (results[j][:, 12] > self.opt.peak_thresh)
                 results[j] = results[j][keep_inds]
-        return results
+
+        new_results = np.vstack([results[j] for j in range(1, self.num_classes + 1)])
+
+        keep_inds = nms(new_results, 0.9)
+        new_results = new_results[keep_inds]
+        new_dict = {}
+        for j in range(1, self.num_classes + 1):
+            new_dict[j] = []
+        new_dict[1] = new_results
+
+        return new_dict
 
     def debug(self, debugger, images, dets, output, scale=1):
         dets = dets.detach().cpu().numpy()

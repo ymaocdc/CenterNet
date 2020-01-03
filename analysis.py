@@ -329,19 +329,73 @@ if __name__ == "__main__":
         # if not 'ID_6d98a2632' in img_name:
         #     continue
 
-        # image = cv2.imread('/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku/data/images/train_images/' + img_name + '.jpg')
+
         # fig, ax = plt.subplots(figsize=(40, 40))
-        # img = np.array(image[:,:,::-1])
+
         items = pred_string.split(' ')
         model_types, yaws, pitches, rolls, xs, ys, zs = [items[i::7] for i in range(7)]
         all_r += rolls
         all_p += pitches
         all_y += yaws
+        # image = cv2.imread(
+        #     '/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku/data/images/train_images/' + img_name + '.jpg')
+        # img = np.array(image[:, :, ::-1])
+        # for car_model, yaw, pitch, roll, x, y, z in zip(model_types, yaws, pitches, rolls, xs, ys, zs):
+        #     data, car_name = load_3dlabel(car_model)
+        #     yaw, pitch, roll, x, y, z = [float(x) for x in [yaw, pitch, roll, x, y, z]]
+        #     # convert 3d bbox back to 2d. 9 points returned.
+        #     # I think the pitch and yaw should be exchanged
+        #
+        #     yaw, pitch, roll = -pitch, -yaw, -roll
+        #     vertices = np.array(data['vertices'])
+        #     vertices[:, 1] = -vertices[:, 1]
+        #     triangles = np.array(data['faces']) - 1
+        #     W, H, L = vertices.max(axis=0) - vertices.min(axis=0)
+        #     # plot 3d mesh
+        #     Rt = np.eye(4)
+        #     t = np.array([x, y, z])
+        #     Rt[:3, 3] = t
+        #     Rt[:3, :3] = euler_to_Rot(yaw, pitch, roll).T
+        #     Rt = Rt[:3, :]
+        #     P = np.ones((vertices.shape[0], vertices.shape[1] + 1))
+        #     P[:, :-1] = vertices
+        #     P = P.T
+        #     img_cor_points = np.dot(k, np.dot(Rt, P))
+        #     img_cor_points = img_cor_points.T
+        #     img_cor_points[:, 0] /= img_cor_points[:, 2]
+        #     img_cor_points[:, 1] /= img_cor_points[:, 2]
+        #     # img = draw_obj(img, img_cor_points, triangles)
+        #
+        #     # find out 2d bbox
+        #     xmin = img_cor_points[:, 0].min()
+        #     xmax = img_cor_points[:, 0].max()
+        #     ymin = img_cor_points[:, 1].min()
+        #     ymax = img_cor_points[:, 1].max()
+        #     xc = (xmin + xmax) // 2
+        #     yc = (ymin + ymax) // 2
+        #     w = xmax - xmin
+        #     h = ymax - ymin
+        #
+        #     cv2.putText(img, str(np.round(-roll,1)),
+        #                 (int(xmin), int(ymin)),
+        #                 cv2.FONT_HERSHEY_SIMPLEX, 1.8, (255, 0, 0), thickness=3)
+        #     cv2.rectangle(img, (int(xmin), int(ymin)),
+        #                   ( int(xmax), int(ymax)), (125, 125, 125), 5)
+        # fig = plt.figure(figsize=(15,15))
+        # plt.imshow(img)
+        # plt.show()
 
     all_r = np.array(all_r, dtype=np.float)
     all_p = np.array(all_p, dtype=np.float)
     all_y = np.array(all_y, dtype=np.float)
 
+
+    def rotate(x, angle):
+        x = x + angle
+        x = x - (x + np.pi) // (2 * np.pi) * 2 * np.pi
+        return x
+
+    # rotate_r = np.array([rotate(x, np.pi) for x in all_r])
     plt.hist(all_r, normed=True, bins=200)
     plt.show()
 
@@ -351,10 +405,15 @@ if __name__ == "__main__":
     plt.hist(all_y, normed=True, bins=200)
     plt.show()
 
-    print(all_y.mean())
-    print(all_y.mean())
-    print(all_y.mean())
-        # for car_model, yaw, pitch, roll, x, y, z in zip(model_types, yaws, pitches, rolls, xs, ys, zs):
+    rotate_r = np.array([rotate(x, np.pi) for x in all_r])
+    plt.hist(rotate_r, normed=True, bins=200)
+    plt.show()
+
+    # print(rotate_r.mean())
+    # print(rotate_r.std())
+    # print(all_y.mean())
+    # print(all_y.mean())
+    #     # for car_model, yaw, pitch, roll, x, y, z in zip(model_types, yaws, pitches, rolls, xs, ys, zs):
         #     overlay = np.zeros((image.shape[0], image.shape[1],3), dtype=np.uint8)
         #     obj = {}
         #     yaw, pitch, roll, x, y, z = [float(x) for x in [yaw, pitch, roll, x, y, z]]

@@ -174,10 +174,8 @@ def demo(opt):
   Detector = detector_factory[opt.task]
   detector = Detector(opt)
 
-  if not use_optimization:
-    outputfolder = os.path.join(opt.root_dir, 'resutls', 'val_'+opt.load_model.split('/')[-2])
-  else:
-    outputfolder = os.path.join(opt.root_dir, 'resutls', 'val_use_optimization' + opt.load_model.split('/')[-2])
+
+  outputfolder = os.path.join(opt.root_dir, 'resutls', 'val_use_optimization_{}'.format(use_optimization) + opt.load_model.split('/')[-2])
   if not os.path.exists(outputfolder):
       os.mkdir(outputfolder)
 
@@ -266,10 +264,7 @@ def demo(opt):
                                                          np.round(box3d.W, 1), np.round(box3d.H, 1))
                                 cv2.putText(img, text, tuple(img_cor_points[1][:2] - 5), 1, 0.5, (0, 50, 255), 1,
                                             cv2.LINE_AA)
-                            fig = plt.figure(figsize=(10, 10))
-                            plt.imshow(img[:, :, ::-1])
-                            plt.show()
-                            plt.close(fig)
+
                         yaw = box3d.global_yaw
                     except:
                         yaw = ret[cls_ind][j][11]
@@ -287,6 +282,10 @@ def demo(opt):
                 tmp_pred.append(coords2str(s))
         tmp_pred = ' '.join(tmp_pred)
 
+        fig = plt.figure(figsize=(10, 10))
+        plt.imshow(img[:, :, ::-1])
+        plt.show()
+        plt.close(fig)
 
         image_ids.append(image_name.split('/')[-1].split('.j')[0])
         val_pred.append(tmp_pred)
@@ -296,10 +295,8 @@ def demo(opt):
         'PredictionString': val_pred,
     }
     val_df = pd.DataFrame(data=data)
-    if not use_optimization:
-        save_to = os.path.join(opt.root_dir, 'submission/{}_val.csv'.format(opt.load_model.split('/')[-2]))
-    else:
-        save_to = os.path.join(opt.root_dir, 'submission/{}_val_use_optimization.csv'.format(opt.load_model.split('/')[-2]))
+
+    save_to = os.path.join(opt.root_dir, 'submission/{}_val_use_optimization_{}.csv'.format(use_optimization, opt.load_model.split('/')[-2]))
     val_df.to_csv(save_to, index=False)
 
     print(save_to)

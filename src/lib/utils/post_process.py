@@ -98,7 +98,11 @@ def ddd_post_process_2d(dets, c, s, opt):
       else:
         top_preds[j + 1] = np.concatenate(
           [top_preds[j + 1], np.zeros((top_preds[j + 1].shape[0], 2), dtype=np.float32)], axis=1)
-
+      if opt.reg_roll:
+        top_preds[j + 1] = np.concatenate([top_preds[j + 1], dets[i, inds, 25][:, np.newaxis].astype(np.float32)], axis=1)
+      else:
+        top_preds[j + 1] = np.concatenate(
+          [top_preds[j + 1], np.zeros((top_preds[j + 1].shape[0], 1), dtype=np.float32)], axis=1)
     ret.append(top_preds)
   return ret
 
@@ -120,6 +124,8 @@ def ddd_post_process_3d(dets, calibs, opt):
         wh = -dets[i][cls_ind][j][:2] + dets[i][cls_ind][j][8:10]
         if opt.reg_pitch:
           pitch = dets[i][cls_ind][j][10]
+        if opt.reg_roll:
+          roll = dets[i][cls_ind][j][17]
         if opt.reg_3d_center:
           center3d = dets[i][cls_ind][j][11:13]
           locations, rotation_y = ddd2locrot(
@@ -150,7 +156,14 @@ def ddd_post_process_3d(dets, calibs, opt):
           pred = pred + center3d.tolist()
         else:
           pred = pred + [None, None]
-
+        if opt.reg_roll:
+          if roll <=0:
+            roll = roll + np.pi
+          else:
+            roll = roll - np.pi
+          pred = pred + [roll]
+        else:
+          pred = pred + [None]
         preds[cls_ind].append(pred)
       preds[cls_ind] = np.array(preds[cls_ind], dtype=np.float32)
     ret.append(preds)

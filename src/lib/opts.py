@@ -192,6 +192,10 @@ class opts(object):
                              help='loss weight for regressing FPE.')
     self.parser.add_argument('--crop_half', default=False, action='store_true', help='crop image half')
     self.parser.add_argument('--crop_from', type=int, default=1018)
+    self.parser.add_argument('--reg_roll', action='store_true', default=False,
+                             help='regress roll.')
+    self.parser.add_argument('--roll_weight', type=float, default=1,
+                             help='loss weight for roll.')
     self.parser.add_argument('--peak_thresh', type=float, default=0.2)
     
     # task
@@ -365,6 +369,8 @@ class opts(object):
           opt.heads.update({'reg_BPE': 2})
       if opt.reg_FPE:
           opt.heads.update({'reg_FPE': 2})
+      if opt.reg_roll:
+          opt.heads.update({'reg_roll': 1})
     else:
       assert 0, 'task not defined!'
     print('heads', opt.heads)

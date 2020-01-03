@@ -3,7 +3,7 @@ from math import sin, cos
 import matplotlib.pyplot as plt
 import cv2
 class Box(object):
-    def __init__(self, xmin, ymin, xmax, ymax, bpe_l, bpe_r, fpe_l, fpe_r, K, L, W, H, tx, ty, tz, pitch, center3d=None):
+    def __init__(self, xmin, ymin, xmax, ymax, bpe_l, bpe_r, fpe_l, fpe_r, K, L, W, H, tx, ty, tz, pitch, center3d=None, roll=None):
 
         # if not bpe_l is None or not bpe_r is None:
         #     bpe_l, bpe_r = self.fix_bpe(xmin, xmax, bpe_l, bpe_r, cropped)
@@ -17,6 +17,7 @@ class Box(object):
         self.fpe_l = fpe_l
         self.fpe_r = fpe_r
         self.center3d = center3d
+        self.roll = roll
         self.K = K
         if type(K) is list:
             self.K = np.array(K).reshape((3, 3))
@@ -69,12 +70,31 @@ class Box(object):
             self.img_cor_points, self.world_cor_points = self.map_to_2d(
                 self.tx, self.ty, self.tz,
                 self.L, self.W, self.H,
-                np.pi*2-self.global_yaw, self.pitch, 0)
+                np.pi*2-self.global_yaw, self.pitch, -(np.pi+self.roll))
 
             # self.img_cor_points, self.world_cor_points = self.map_to_2d(
             #     self.tx, self.ty, self.tz,
             #     5, 2, 1.6,
             #     np.pi * 2 - self.global_yaw, self.pitch, 0)
+            # img = np.zeros((2710, 3384, 3), dtype=np.uint8)
+            # img = self.draw_corners(img, self.img_cor_points)
+            # img = self.draw_lines(img, self.img_cor_points, style='fb')
+            # plt.imshow(img[:,:,::-1])
+            # plt.show()
+
+            #
+            # for roll in [0, np.pi/4, np.pi/2, np.pi/4*3, np.pi]:
+            #     self.img_cor_points, self.world_cor_points = self.map_to_2d(
+            #         0, self.ty, 20,
+            #         self.L, self.W, self.H,
+            #         0, 0, roll)
+            #     img = np.zeros((2710, 3384, 3), dtype=np.uint8)
+            #     img = self.draw_corners(img, self.img_cor_points)
+            #     img = self.draw_lines(img, self.img_cor_points, style='fb')
+            #     plt.imshow(img[:, :, ::-1])
+            #     plt.show()
+
+
 
     def translation_constraints_try_error_yawLWH(self, try_yaw, try_L, try_W, try_H):
         """Improved version with iterative trial and error
@@ -93,7 +113,7 @@ class Box(object):
             #     try_yaw_range = np.arange(-np.pi/2 - np.pi/6, np.pi/2 + np.pi/6, np.pi/60)
             # else:
             #     try_yaw_range = np.arange(np.pi/2  - np.pi / 6, np.pi/2*3 + np.pi / 6, np.pi / 60)
-            try_yaw_range = np.arange(ini_global_yaw - np.pi / 10, ini_global_yaw + np.pi / 10, np.pi / 60)
+            try_yaw_range = np.arange(ini_global_yaw - np.pi / 12, ini_global_yaw + np.pi / 12, np.pi / 60)
         else:
             try_yaw_range = [ini_global_yaw]
 
@@ -117,18 +137,10 @@ class Box(object):
             for L in try_L_range:
                 for W in try_W_range:
                     for H in try_H_range :
-                        # Y = np.array([[np.cos(try_global_yaw), 0, np.sin(try_global_yaw)],
-                        #               [0, 1, 0],
-                        #               [-np.sin(try_global_yaw), 0, np.cos(try_global_yaw)]])
-                        #
-                        #
-                        # P = np.array([[1, 0, 0],
-                        #               [0, cos(self.pitch), -sin(self.pitch)],
-                        #               [0, sin(self.pitch), cos(self.pitch)]])
                         R = self.euler_to_Rot(np.pi*2-try_global_yaw, self.pitch, 0).T
 
                         xmin_candi, xmax_candi, ymin_candi, ymax_candi, \
-                        l_bpe_candi, r_bpe_candi, l_fpe_candi, r_fpe_candi = self.box3d_candidate(self.local_yaw, L, W, H)
+                        l_bpe_candi, r_bpe_candi, l_fpe_candi, r_fpe_candi = self.box3d_candidate(self.local_yaw, L, W, H,roll=np.pi+self.roll)
 
                         try_xmax = self.xmax
                         try_xmin = self.xmin
@@ -184,7 +196,6 @@ class Box(object):
                         res = np.matmul(A, Tran) - b
 
                         tx, ty, tz = [float(np.around(tran, 2)) for tran in Tran]
-
                         # img_cor_points, world_cor_points = Box.map_to_2d(tx, ty, tz, L, W, H, np.pi*2-try_global_yaw, self.pitch, 0)
                         # proj_bbox = [min(img_cor_points[:,0]), min(img_cor_points[:,1]), max(img_cor_points[:,0]), max(img_cor_points[:,1])]
                         # iou = self.get_iou(bbox, proj_bbox)
@@ -311,7 +322,7 @@ class Box(object):
         return local_yaw_predict
 
     @staticmethod
-    def box3d_candidate(local_yaw, L=4.6, W=2, H=1.6, soft_range=0):
+    def box3d_candidate(local_yaw, L=4.6, W=2, H=1.6, soft_range=0, roll=0):
         """
         give local yaw and 3d real size of object, find the corresponding 3d Points that define the 2d bbox.
         """
@@ -588,7 +599,7 @@ class Box(object):
                 color = (0, 128, 255)
             elif idx == 1:
                 color = (0, 255, 255)
-            elif idx == 7:
+            elif idx == 2:
                 color = (255, 0, 0)
             else:
                 color = (255, 255, 255)

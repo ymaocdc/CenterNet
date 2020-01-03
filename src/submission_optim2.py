@@ -9,7 +9,7 @@ import cv2
 import pandas as pd
 from opts import opts
 import numpy as np
-from Box import Box
+from Box_roll import Box
 from detectors.detector_factory import detector_factory
 
 import matplotlib.pyplot as plt
@@ -84,7 +84,7 @@ def draw_corners(img, points):
             color = (255, 0, 0)
         else:
             color = (255, 255, 0)
-        cv2.circle(img, (p_x, p_y), 3, color, -1)
+        cv2.circle(img, (p_x, p_y), 10, color, -1)
     return img
 
 class JsonSerilizable(json.JSONEncoder):
@@ -225,7 +225,7 @@ def demo(opt):
     predictions = {}
     for (image_name) in image_names:
 
-        # if not 'ID_dcf9bade5' in image_name:
+        # if not 'ID_001d6829a' in image_name:
         #     continue
         if debug:
             org_im = cv2.imread(image_name)
@@ -251,6 +251,7 @@ def demo(opt):
         predictions[image_name.split('/')[-1].split('.j')[0]] = []
         for cls_ind in ret:
             for j in range(len(ret[cls_ind])):
+                # j=4
                 bbox = ret[cls_ind][j][1:5]
                 xc = int((bbox[0] +bbox[2])//2)
                 yc = int((bbox[1] + bbox[3])//2)
@@ -263,8 +264,9 @@ def demo(opt):
                 tx, ty, tz = ret[cls_ind][j, 8:11]
                 pitch = ret[cls_ind][j, 13]
                 center3d = ret[cls_ind][j, 18:20]
+                roll = ret[cls_ind][j, 20]
                 try:
-                    box3d = Box(xmin, ymin, xmax, ymax, bpe_l, bpe_r, fpe_l, fpe_r, calib, L, W, H, tx, ty, tz, pitch, center3d)
+                    box3d = Box(xmin, ymin, xmax, ymax, bpe_l, bpe_r, fpe_l, fpe_r, calib, L, W, H, tx, ty, tz, pitch, center3d=center3d, roll=roll)
                     box3d.lift_to_3d()
                     if debug:
                         img_cor_points = box3d.img_cor_points
@@ -289,13 +291,13 @@ def demo(opt):
                 if yaw > np.pi:
                     yaw = yaw-np.pi*2
 
-                s = [pitch, -yaw, -3.1, ret[cls_ind][j][8], ret[cls_ind][j][9], ret[cls_ind][j][10],
+                s = [pitch, -yaw, roll, ret[cls_ind][j][8], ret[cls_ind][j][9], ret[cls_ind][j][10],
                      ret[cls_ind][j][12]]
                 predictions[image_name.split('/')[-1].split('.j')[0]].append(coords2str(s))
         predictions[image_name.split('/')[-1].split('.j')[0]] = ' '.join(predictions[image_name.split('/')[-1].split('.j')[0]])
 
         if debug:
-            fig = plt.figure(figsize=(20, 20))
+            fig = plt.figure(figsize=(10, 10))
             plt.imshow(img[:, :, ::-1])
             plt.savefig(os.path.join(optim_output_folder, image_name.split('/')[-1].split('.')[0] + '.jpg'),  bbox_inches='tight', pad_inches=0)
             # plt.show()
@@ -310,7 +312,7 @@ def demo(opt):
     for idx, image_id in enumerate(test['ImageId']):
         test['PredictionString'][idx] = predictions[image_id]
 
-    write_to = os.path.join(opt.root_dir, 'submission/{}_optim_fix_nms.csv'.format(opt.load_model.split('/')[-2]))
+    write_to = os.path.join(opt.root_dir, 'submission/{}_optim_fix.csv'.format(opt.load_model.split('/')[-2]))
     test.to_csv(write_to, index=False)
     test.head()
     print(write_to)

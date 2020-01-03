@@ -423,7 +423,7 @@ def exct_decode(
 
     return detections
 
-def ddd_decode(heat, rot, depth, dim, wh=None, reg=None, K=40, pitch=None, reg_3d=None, reg_BPE=None, reg_FPE=None):
+def ddd_decode(heat, rot, depth, dim, wh=None, reg=None, K=40, pitch=None, reg_3d=None, reg_BPE=None, reg_FPE=None, roll=None):
     batch, cat, height, width = heat.size()
     # heat = torch.sigmoid(heat)
     # perform nms on heatmaps
@@ -461,7 +461,7 @@ def ddd_decode(heat, rot, depth, dim, wh=None, reg=None, K=40, pitch=None, reg_3
     if pitch is not None:
         pitch = _transpose_and_gather_feat(pitch, inds)
         pitch = pitch.view(batch, K, 1)
-        pitch = -pitch + 0.15
+        pitch = pitch+0.15
     else:
         pitch = torch.cuda.FloatTensor(batch, K, 1).fill_(None)
     detections = torch.cat([detections, pitch], dim=2)
@@ -496,6 +496,14 @@ def ddd_decode(heat, rot, depth, dim, wh=None, reg=None, K=40, pitch=None, reg_3
         RFPE = torch.cuda.FloatTensor(batch, K, 1).fill_(0)
 
     detections = torch.cat([detections, LFPE, RFPE], dim=2)
+
+    if roll is not None:
+        roll = _transpose_and_gather_feat(roll, inds)
+        roll = roll.view(batch, K, 1)
+        # roll =
+    else:
+        roll = torch.cuda.FloatTensor(batch, K, 1).fill_(0)
+    detections = torch.cat([detections, roll], dim=2)
 
     return detections
 

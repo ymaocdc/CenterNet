@@ -28,7 +28,7 @@ class DddLoss(torch.nn.Module):
         opt = self.opt
 
         hm_loss, dep_loss, rot_loss, dim_loss, pitch_loss, reg_3d_center_loss, reg_BPE_loss, reg_FPE_loss = 0, 0, 0, 0, 0, 0, 0, 0
-        wh_loss, off_loss = 0, 0
+        wh_loss, off_loss, roll_loss = 0, 0, 0
         for s in range(opt.num_stacks):
             output = outputs[s]
             output['hm'] = _sigmoid(output['hm'])
@@ -54,6 +54,9 @@ class DddLoss(torch.nn.Module):
             if opt.pitch_weight >= 0 and opt.reg_pitch:
                 pitch_loss += self.crit_reg(output['reg_pitch'], batch['reg_pitch_mask'],
                                           batch['ind'], batch['reg_pitch']) / opt.num_stacks
+            if opt.roll_weight >= 0 and opt.reg_roll:
+                roll_loss += self.crit_reg(output['reg_roll'], batch['reg_roll_mask'],
+                                          batch['ind'], batch['reg_roll']) / opt.num_stacks
             if opt.reg_bbox and opt.wh_weight >= 0:
                 wh_loss += self.crit_reg(output['wh'], batch['rot_mask'],
                                          batch['ind'], batch['wh']) / opt.num_stacks
@@ -79,9 +82,11 @@ class DddLoss(torch.nn.Module):
 
         loss_stats = {'loss': loss, 'hm_loss': hm_loss, 'dep_loss': dep_loss,
                       'dim_loss': dim_loss, 'rot_loss': rot_loss,
-                      'wh_loss': wh_loss, 'off_loss': off_loss}
+                      'wh_loss': wh_loss, 'off_loss': off_loss, 'roll_loss': roll_loss}
         if self.opt.reg_pitch:
             loss_stats.update({'reg_pitch_loss': pitch_loss})
+        if self.opt.reg_roll:
+            loss_stats.update({'reg_roll_loss': roll_loss})
         if self.opt.reg_3d_center:
             loss_stats.update({'reg_3d_center_loss': reg_3d_center_loss})
         if self.opt.reg_BPE:
@@ -106,6 +111,8 @@ class PkuTrainer(BaseTrainer):
             loss_states = loss_states + ['reg_FPE_loss']
         if self.opt.reg_BPE:
             loss_states = loss_states + ['reg_BPE_loss']
+        if self.opt.reg_roll:
+            loss_states = loss_states + ['reg_roll_loss']
         loss = DddLoss(opt)
         return loss_states, loss
 

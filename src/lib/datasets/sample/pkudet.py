@@ -86,6 +86,9 @@ class PKUDataset(data.Dataset):
         if self.opt.reg_FPE:
             reg_FPE = np.zeros((self.max_objs, 2), dtype=np.float32)
             reg_FPE_mask = np.zeros((self.max_objs), dtype=np.uint8)
+        if self.opt.reg_roll:
+            reg_roll = np.zeros((self.max_objs, 1), dtype=np.float32)
+            reg_roll_mask = np.zeros((self.max_objs), dtype=np.uint8)
 
         hm = np.zeros(
             (num_classes, self.opt.output_h, self.opt.output_w), dtype=np.float32)
@@ -176,23 +179,6 @@ class PKUDataset(data.Dataset):
                     gt_det[-1] = gt_det[-1][:-1] + [w, h] + [gt_det[-1][-1]]
                 # print(ann['bbox'][:2], np.rad2deg(alpha))
 
-                # if alpha < np.pi/4+np.pi/8. or alpha > np.pi/2*3-np.pi/8:
-                #     rotbin[k, 0] = 1
-                #     if alpha < np.pi/4+np.pi/8:
-                #         rotres[k, 0] = alpha
-                #     else:
-                #         rotres[k, 0] = alpha - np.pi*2
-                # if alpha > np.pi/4-np.pi/8. and alpha < np.pi/4*3+np.pi/8:
-                #     rotbin[k, 1] = 1
-                #     rotres[k, 1] = alpha - np.pi/2
-                # if alpha > np.pi/4*3-np.pi/8. or alpha > np.pi/4*5+np.pi/8:
-                #     rotbin[k, 2] = 1
-                #     rotres[k, 2] = alpha - np.pi
-                # if alpha > np.pi/4*5-np.pi/8. and alpha < np.pi/2*7+np.pi/8:
-                #     rotbin[k, 3] = 1
-                #     rotres[k, 3] = alpha - np.pi/2*3
-
-
                 if alpha < np.pi/2+np.pi/6. or alpha > np.pi/2*3-np.pi/6:
                     rotbin[k, 0] = 1
                     if alpha < np.pi/2 +np.pi/6:
@@ -209,7 +195,18 @@ class PKUDataset(data.Dataset):
                     reg_pitch[k] = -0.15-pitch
                     reg_pitch_mask[k] = 1
                     gt_det[-1] = gt_det[-1] + [reg_pitch[k][0]]
-
+                if self.opt.reg_roll:
+                    roll = ann['roll']
+                    if roll < 0:
+                        roll = roll + np.pi
+                    else:
+                        roll = roll - np.pi
+                    reg_roll_mask[k] = 1
+                    if flipped:
+                        roll = -roll
+                        reg_roll_mask[k] = 0
+                    reg_roll[k] = roll
+                    gt_det[-1] = gt_det[-1] + [reg_roll[k][0]]
                 if self.opt.reg_3d_center:
                     projected_3D_center = ann['projected_3D_center']
                     if self.opt.crop_half:
@@ -233,8 +230,6 @@ class PKUDataset(data.Dataset):
                     reg_FPE_mask[k] = 1
                     gt_det[-1] = gt_det[-1] + [ct[0] - FPE[0], ct[0] - FPE[1]]
 
-
-
                 dep[k] = ann['3D_location'][2]
                 dim[k] = ann['3D_dimension']
                 # print('        cat dim', cls_id, dim[k])
@@ -242,7 +237,6 @@ class PKUDataset(data.Dataset):
                 reg[k] = ct - ct_int
                 reg_mask[k] = 1 if not aug else 0
                 rot_mask[k] = 1
-
 
                 # {'SUV': {'W': 2.10604523, 'H': 1.67994469, 'L': 4.73350861},
                 #  '2x': {'W': 1.81794264, 'H': 1.47786305, 'L': 4.49547776},
@@ -252,6 +246,8 @@ class PKUDataset(data.Dataset):
                'rot_mask': rot_mask}
         if self.opt.reg_pitch:
             ret.update({'reg_pitch': reg_pitch, 'reg_pitch_mask': reg_pitch_mask})
+        if self.opt.reg_roll:
+            ret.update({'reg_roll': reg_roll, 'reg_roll_mask': reg_roll_mask})
         if self.opt.reg_3d_center:
             ret.update({'reg_3d_ct': reg_3d_ct, 'reg_3d_ct_mask': reg_3d_ct_mask})
         if self.opt.reg_BPE:

@@ -229,15 +229,15 @@ def draw_points(image, points):
     return image
 if __name__ == "__main__":
 
-    # x, y, z, w, h, l, yaw, pitch, roll = -2,2,10,2,1.6,6, 0.1, 0.15, 0
-    # img_cor_points = map2d(x, y, z, w, h, l, yaw, pitch, roll)
-    # img_cor_points = img_cor_points.astype(int)
-    # img = np.zeros((2710, 3384, 3), dtype=np.uint8)
-    # img = draw_points(img, img_cor_points)
-    # img = draw_line(img, img_cor_points)
-    # plt.clf()
-    # plt.imshow(img[:,:,::-1])
-    # plt.show()
+    x, y, z, w, h, l, yaw, pitch, roll = -2,2,10,2,1.6,6, 0, 0, np.pi/4
+    img_cor_points = map2d(x, y, z, w, h, l, yaw, pitch, roll)
+    img_cor_points = img_cor_points.astype(int)
+    img = np.zeros((2710, 3384, 3), dtype=np.uint8)
+    img = draw_points(img, img_cor_points)
+    img = draw_line(img, img_cor_points)
+    plt.clf()
+    plt.imshow(img[:,:,::-1])
+    plt.show()
 
 
     # a label and all meta information
@@ -522,8 +522,10 @@ if __name__ == "__main__":
 
             # cv2.rectangle(img, (obj['2D_bbox_xyxy'][0], obj['2D_bbox_xyxy'][1]),
             #               (obj['2D_bbox_xyxy'][2], obj['2D_bbox_xyxy'][3]), (0, 0, 255), 5)
-        with open(os.path.join(output_folder, img_name + '.json'), 'w') as fout:
-            json.dump(gt, fout, cls=NumpyEncoder)
+
+
+        # with open(os.path.join(output_folder, img_name + '.json'), 'w') as fout:
+        #     json.dump(gt, fout, cls=NumpyEncoder)
 
         # image = Image.fromarray(img)
         # alpha = .5
