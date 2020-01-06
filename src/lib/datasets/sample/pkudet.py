@@ -192,7 +192,7 @@ class PKUDataset(data.Dataset):
 
                 if self.opt.reg_pitch:
                     pitch = ann['pitch']
-                    reg_pitch[k] = -0.15-pitch
+                    reg_pitch[k] = pitch
                     reg_pitch_mask[k] = 1
                     gt_det[-1] = gt_det[-1] + [reg_pitch[k][0]]
                 if self.opt.reg_roll:

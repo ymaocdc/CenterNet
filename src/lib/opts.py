@@ -362,7 +362,7 @@ class opts(object):
       if opt.reg_offset:
         opt.heads.update({'reg': 2})
       if opt.reg_pitch:
-          opt.heads.update({'reg_pitch': 1})
+          opt.heads.update({'reg_pitch': 2})
       if opt.reg_3d_center:
           opt.heads.update({'reg_3d_ct': 2})
       if opt.reg_BPE:
@@ -370,7 +370,7 @@ class opts(object):
       if opt.reg_FPE:
           opt.heads.update({'reg_FPE': 2})
       if opt.reg_roll:
-          opt.heads.update({'reg_roll': 1})
+          opt.heads.update({'reg_roll': 2})
     else:
       assert 0, 'task not defined!'
     print('heads', opt.heads)
