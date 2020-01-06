@@ -170,12 +170,9 @@ def demo(opt):
   Detector = detector_factory[opt.task]
   detector = Detector(opt)
 
-  model_outputfolder = os.path.join(opt.root_dir, 'model_prediction_resutls', opt.load_model.split('/')[-2]+'_optim')
+  model_outputfolder = os.path.join(opt.root_dir, 'model_prediction_resutls', opt.load_model.split('/')[-2]+'_training')
   if not os.path.exists(model_outputfolder):
       os.mkdir(model_outputfolder)
-  if not os.path.exists(os.path.join(opt.root_dir, 'optim_resutls2')):
-      os.mkdir(os.path.join(opt.root_dir, 'optim_resutls2'))
-
 
   # bbox2d_folder
   output_dir = '/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku/bbox_results/{}'.format(
@@ -184,6 +181,8 @@ def demo(opt):
       os.mkdir(output_dir)
   opt.output_dir = output_dir
 
+  if not os.path.exists(os.path.join(opt.root_dir, 'optim_resutls2')):
+      os.mkdir(os.path.join(opt.root_dir, 'optim_resutls2'))
   optim_output_folder = os.path.join(opt.root_dir, 'optim_resutls2', opt.load_model.split('/')[-2]+'_optim_fix')
   if not os.path.exists(optim_output_folder):
       os.mkdir(optim_output_folder)
@@ -248,72 +247,72 @@ def demo(opt):
         with open(os.path.join(model_outputfolder, image_name.split('/')[-1].split('.')[0]+'.json'), 'w') as f_out:
             json.dump(results, f_out, indent=4, sort_keys=True, cls=NumpyEncoder)
 
-        predictions[image_name.split('/')[-1].split('.j')[0]] = []
-        for cls_ind in ret:
-            for j in range(len(ret[cls_ind])):
-                bbox = ret[cls_ind][j][1:5]
-                xc = int((bbox[0] +bbox[2])//2)
-                yc = int((bbox[1] + bbox[3])//2)
-                if test_mask[yc, xc] > 125:
-                    continue
-                xmin, ymin, xmax, ymax = toint(ret[cls_ind][j, 1:5])
-                bpe_l, bpe_r = toint(ret[cls_ind][j, 14:16])
-                fpe_l, fpe_r = toint(ret[cls_ind][j, 16:18])
-                H, W, L = ret[cls_ind][j, 5:8]
-                tx, ty, tz = ret[cls_ind][j, 8:11]
-                pitch = ret[cls_ind][j, 13]
-                center3d = ret[cls_ind][j, 18:20]
-                try:
-                    box3d = Box(xmin, ymin, xmax, ymax, bpe_l, bpe_r, fpe_l, fpe_r, calib, L, W, H, tx, ty, tz, pitch, center3d)
-                    box3d.lift_to_3d()
-                    if debug:
-                        img_cor_points = box3d.img_cor_points
-                        if not img_cor_points is None:
-                            img_cor_points = img_cor_points
-                            img = draw_corners(img, img_cor_points)
-                            img = draw_lines(img, img_cor_points, style='fb')
-                            # text = '{} {} {}'.format(np.round(box3d.tx, 1), np.round(box3d.ty, 1), np.round(box3d.tz, 1))
-                            # cv2.putText(img, text, tuple((img_cor_points[1][0] - 5, img_cor_points[1][1] - 20)), 1, 0.5,
-                            #             (0, 50, 255), 1, cv2.LINE_AA)
+        # predictions[image_name.split('/')[-1].split('.j')[0]] = []
+        # for cls_ind in ret:
+        #     for j in range(len(ret[cls_ind])):
+        #         bbox = ret[cls_ind][j][1:5]
+        #         xc = int((bbox[0] +bbox[2])//2)
+        #         yc = int((bbox[1] + bbox[3])//2)
+        #         if test_mask[yc, xc] > 125:
+        #             continue
+        #         xmin, ymin, xmax, ymax = toint(ret[cls_ind][j, 1:5])
+        #         bpe_l, bpe_r = toint(ret[cls_ind][j, 14:16])
+        #         fpe_l, fpe_r = toint(ret[cls_ind][j, 16:18])
+        #         H, W, L = ret[cls_ind][j, 5:8]
+        #         tx, ty, tz = ret[cls_ind][j, 8:11]
+        #         pitch = ret[cls_ind][j, 13]
+        #         center3d = ret[cls_ind][j, 18:20]
+        #         try:
+        #             box3d = Box(xmin, ymin, xmax, ymax, bpe_l, bpe_r, fpe_l, fpe_r, calib, L, W, H, tx, ty, tz, pitch, center3d)
+        #             box3d.lift_to_3d()
+        #             if debug:
+        #                 img_cor_points = box3d.img_cor_points
+        #                 if not img_cor_points is None:
+        #                     img_cor_points = img_cor_points
+        #                     img = draw_corners(img, img_cor_points)
+        #                     img = draw_lines(img, img_cor_points, style='fb')
+        #                     # text = '{} {} {}'.format(np.round(box3d.tx, 1), np.round(box3d.ty, 1), np.round(box3d.tz, 1))
+        #                     # cv2.putText(img, text, tuple((img_cor_points[1][0] - 5, img_cor_points[1][1] - 20)), 1, 0.5,
+        #                     #             (0, 50, 255), 1, cv2.LINE_AA)
+        #
+        #             yaw = box3d.global_yaw
+        #         except:
+        #             yaw = ret[cls_ind][j][11]
+        #
+        #         if yaw is None:
+        #             yaw = ret[cls_ind][j][11]
+        #
+        #         # replace the yaw and save the optimization result to json for mlp later
+        #         ret[cls_ind][j][11] = yaw
+        #
+        #         if yaw > np.pi:
+        #             yaw = yaw-np.pi*2
+        #
+        #         s = [pitch, -yaw, -3.1, ret[cls_ind][j][8], ret[cls_ind][j][9], ret[cls_ind][j][10],
+        #              ret[cls_ind][j][12]]
+        #         predictions[image_name.split('/')[-1].split('.j')[0]].append(coords2str(s))
+        # predictions[image_name.split('/')[-1].split('.j')[0]] = ' '.join(predictions[image_name.split('/')[-1].split('.j')[0]])
+        #
+        # if debug:
+        #     fig = plt.figure(figsize=(20, 20))
+        #     plt.imshow(img[:, :, ::-1])
+        #     plt.savefig(os.path.join(optim_output_folder, image_name.split('/')[-1].split('.')[0] + '.jpg'),  bbox_inches='tight', pad_inches=0)
+        #     # plt.show()
+        #     plt.close(fig)
+        #
+        # optm_results = res2dict(ret, image_name, opt, center_thresh=0)
+        # with open(os.path.join(optim_output_folder, image_name.split('/')[-1].split('.')[0] + '.json'),
+        #           'w') as f_out:
+        #     json.dump(optm_results, f_out, indent=4, sort_keys=True, cls=NumpyEncoder)
 
-                    yaw = box3d.global_yaw
-                except:
-                    yaw = ret[cls_ind][j][11]
-
-                if yaw is None:
-                    yaw = ret[cls_ind][j][11]
-
-                # replace the yaw and save the optimization result to json for mlp later
-                ret[cls_ind][j][11] = yaw
-
-                if yaw > np.pi:
-                    yaw = yaw-np.pi*2
-
-                s = [pitch, -yaw, -3.1, ret[cls_ind][j][8], ret[cls_ind][j][9], ret[cls_ind][j][10],
-                     ret[cls_ind][j][12]]
-                predictions[image_name.split('/')[-1].split('.j')[0]].append(coords2str(s))
-        predictions[image_name.split('/')[-1].split('.j')[0]] = ' '.join(predictions[image_name.split('/')[-1].split('.j')[0]])
-
-        if debug:
-            fig = plt.figure(figsize=(20, 20))
-            plt.imshow(img[:, :, ::-1])
-            plt.savefig(os.path.join(optim_output_folder, image_name.split('/')[-1].split('.')[0] + '.jpg'),  bbox_inches='tight', pad_inches=0)
-            # plt.show()
-            plt.close(fig)
-
-        optm_results = res2dict(ret, image_name, opt, center_thresh=0)
-        with open(os.path.join(optim_output_folder, image_name.split('/')[-1].split('.')[0] + '.json'),
-                  'w') as f_out:
-            json.dump(optm_results, f_out, indent=4, sort_keys=True, cls=NumpyEncoder)
-
-    test = pd.read_csv(os.path.join(opt.root_dir, 'sample_submission.csv'))
-    for idx, image_id in enumerate(test['ImageId']):
-        test['PredictionString'][idx] = predictions[image_id]
-
-    write_to = os.path.join(opt.root_dir, 'submission/{}_optim_fix_nms.csv'.format(opt.load_model.split('/')[-2]))
-    test.to_csv(write_to, index=False)
-    test.head()
-    print(write_to)
+    # test = pd.read_csv(os.path.join(opt.root_dir, 'sample_submission.csv'))
+    # for idx, image_id in enumerate(test['ImageId']):
+    #     test['PredictionString'][idx] = predictions[image_id]
+    #
+    # write_to = os.path.join(opt.root_dir, 'submission/{}_optim_fix_nms.csv'.format(opt.load_model.split('/')[-2]))
+    # test.to_csv(write_to, index=False)
+    # test.head()
+    # print(write_to)
 if __name__ == '__main__':
   opt = opts().init()
   demo(opt)

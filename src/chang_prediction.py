@@ -10,11 +10,17 @@ def coords2str(coords, names=['yaw', 'pitch', 'roll', 'x', 'y', 'z', 'confidence
 
 if __name__ == '__main__':
     root_dir = '/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku/submission'
-    csv_name = 'dim_rot_0_reg_roll_hourglass_5121024_optim_fix.csv'
+    csv_name = 'pku_everything_equalweight_5121024_flip_for_patrick.csv'
     csv_file = os.path.join(root_dir, csv_name)
-
     train = pd.read_csv(csv_file)
+
+    flip_csv = os.path.join('/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku', 'flipped.csv')
+    flip_ids = pd.read_csv(flip_csv, header=None)
+
+    flip_ids = list(flip_ids[0])
+
     image_ids = []
+
     prediction =[]
     count =0
     for id in tqdm(range(len(train))):  # len(train)):
@@ -42,7 +48,10 @@ if __name__ == '__main__':
                 #     tmp_pred.append(s)
                 # else:
                 #     count += 1
-                roll= '-3.10'
+                if img_name+'.jpg' in flip_ids:
+                    roll = '-3.1'
+                else:
+                    roll= '-3.10'
                 s = [yaw, pitch, roll, x, y, z, score]
                 tmp_pred.append(' '.join(s))
             tmp_pred = ' '.join(tmp_pred)
@@ -55,6 +64,6 @@ if __name__ == '__main__':
     }
     val_df = pd.DataFrame(data=data)
 
-    save_to = os.path.join(root_dir, '{}_{}'.format('neg_roll', csv_name))
+    save_to = os.path.join(root_dir, '{}_{}'.format('roll_neg3.1', csv_name))
     val_df.to_csv(save_to, index=False)
     print(save_to)

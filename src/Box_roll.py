@@ -235,6 +235,8 @@ class Box(object):
     def map_to_2d(X ,Y, Z, L, W, H, yaw, pitch, roll, offset_from_center=None,K=np.array([[2304.5479, 0, 1686.2379],
                       [0, 2305.8757, 1354.9849],
                       [0, 0, 1]], dtype=np.float32)):
+        if np.isnan(roll):
+            roll = -np.pi
         Rt = np.eye(4)
         t = np.array([X ,Y, Z])
         Rt[:3, 3] = t

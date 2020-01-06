@@ -122,6 +122,7 @@ class NumpyEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 def res2dict(dets, image_name, opt, center_thresh=0.2):
+    typedict = {1:'2x', 2:'3x', 3:'suv'}
     result = {}
     result['file'] = image_name
     result['objects'] = []
@@ -150,6 +151,7 @@ def res2dict(dets, image_name, opt, center_thresh=0.2):
                     obj['FPE'] = dets[cat][i, 16:18]
                 else:
                     obj['FPE'] = None
+                obj['type'] = typedict[cat]
 
 
                 result['objects'].append(obj)
@@ -170,7 +172,8 @@ def demo(opt):
   Detector = detector_factory[opt.task]
   detector = Detector(opt)
 
-  model_outputfolder = os.path.join(opt.root_dir, 'model_prediction_resutls', opt.load_model.split('/')[-2]+'_optim_fix_res')
+  suffix = '_for_patrick'
+  model_outputfolder = os.path.join(opt.root_dir, 'model_prediction_resutls', opt.load_model.split('/')[-2]+suffix)
   if not os.path.exists(model_outputfolder):
       os.mkdir(model_outputfolder)
   if not os.path.exists(os.path.join(opt.root_dir, 'optim_resutls2')):
@@ -184,7 +187,7 @@ def demo(opt):
       os.mkdir(output_dir)
   opt.output_dir = output_dir
 
-  optim_output_folder = os.path.join(opt.root_dir, 'optim_resutls2', opt.load_model.split('/')[-2]+'_optim_fix_res')
+  optim_output_folder = os.path.join(opt.root_dir, 'optim_resutls2', opt.load_model.split('/')[-2]+suffix)
   if not os.path.exists(optim_output_folder):
       os.mkdir(optim_output_folder)
 
@@ -290,7 +293,8 @@ def demo(opt):
 
                 if yaw > np.pi:
                     yaw = yaw-np.pi*2
-
+                if np.isnan(roll):
+                    roll = -3.1
                 s = [pitch, -yaw, roll, ret[cls_ind][j][8], ret[cls_ind][j][9], ret[cls_ind][j][10],
                      ret[cls_ind][j][12]]
                 predictions[image_name.split('/')[-1].split('.j')[0]].append(coords2str(s))
@@ -300,10 +304,10 @@ def demo(opt):
             fig = plt.figure(figsize=(10, 10))
             plt.imshow(img[:, :, ::-1])
             plt.savefig(os.path.join(optim_output_folder, image_name.split('/')[-1].split('.')[0] + '.jpg'),  bbox_inches='tight', pad_inches=0)
-            plt.show()
+            # plt.show()
             plt.close(fig)
 
-        optm_results = res2dict(ret, image_name, opt, center_thresh=0)
+        optm_results = res2dict(ret, image_name, opt, center_thresh=opt.peak_thresh)
         with open(os.path.join(optim_output_folder, image_name.split('/')[-1].split('.')[0] + '.json'),
                   'w') as f_out:
             json.dump(optm_results, f_out, indent=4, sort_keys=True, cls=NumpyEncoder)
@@ -312,7 +316,7 @@ def demo(opt):
     for idx, image_id in enumerate(test['ImageId']):
         test['PredictionString'][idx] = predictions[image_id]
 
-    write_to = os.path.join(opt.root_dir, 'submission/{}_optim_fix_res.csv'.format(opt.load_model.split('/')[-2]))
+    write_to = os.path.join(opt.root_dir, 'submission/{}{}.csv'.format(opt.load_model.split('/')[-2], suffix))
     test.to_csv(write_to, index=False)
     test.head()
     print(write_to)
