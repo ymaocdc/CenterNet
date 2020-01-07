@@ -110,6 +110,5 @@ class EffNet(nn.Module):
 
 def get_eff_net(num_layers, heads, head_conv):
     # NOTE: num_layers in efficientnet means b0 ~ b7 model.
-    print('efficientnet-b' + str(num_layers))
     model = EffNet(num_layers, heads, head_conv)
     return model
