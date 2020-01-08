@@ -84,7 +84,7 @@ def draw_corners(img, points):
             color = (255, 0, 0)
         else:
             color = (255, 255, 0)
-        cv2.circle(img, (p_x, p_y), 10, color, -1)
+        cv2.circle(img, (p_x, p_y), 7, color, -1)
     return img
 
 class JsonSerilizable(json.JSONEncoder):
@@ -172,7 +172,7 @@ def demo(opt):
   Detector = detector_factory[opt.task]
   detector = Detector(opt)
 
-  suffix = '_for_patrick'
+  suffix = 'test_results'
   model_outputfolder = os.path.join(opt.root_dir, 'model_prediction_resutls', opt.load_model.split('/')[-2]+suffix)
   if not os.path.exists(model_outputfolder):
       os.mkdir(model_outputfolder)
@@ -227,8 +227,10 @@ def demo(opt):
 
     predictions = {}
     for (image_name) in image_names:
-
-        # if not 'ID_001d6829a' in image_name:
+        world_im = np.zeros((2000, 600), dtype=np.uint8)
+        bottom_im = np.zeros((2000, 600), dtype=np.float)
+        resolution = 0.1  # m/pixel
+        # if not 'ID_000372ced' in image_name:
         #     continue
         if debug:
             org_im = cv2.imread(image_name)
@@ -265,6 +267,7 @@ def demo(opt):
                 fpe_l, fpe_r = toint(ret[cls_ind][j, 16:18])
                 H, W, L = ret[cls_ind][j, 5:8]
                 tx, ty, tz = ret[cls_ind][j, 8:11]
+                score = ret[cls_ind][j, 12]
                 pitch = ret[cls_ind][j, 13]
                 center3d = ret[cls_ind][j, 18:20]
                 roll = ret[cls_ind][j, 20]
@@ -277,11 +280,21 @@ def demo(opt):
                             img_cor_points = img_cor_points
                             img = draw_corners(img, img_cor_points)
                             img = draw_lines(img, img_cor_points, style='fb')
-                            # text = '{} {} {}'.format(np.round(box3d.tx, 1), np.round(box3d.ty, 1), np.round(box3d.tz, 1))
-                            # cv2.putText(img, text, tuple((img_cor_points[1][0] - 5, img_cor_points[1][1] - 20)), 1, 0.5,
-                            #             (0, 50, 255), 1, cv2.LINE_AA)
-                    # print(np.rad2deg(box3d.global_yaw), np.rad2deg(ret[cls_ind][j][11]))
+
+                            text = '{0:.2f}'.format(score)
+                            cv2.putText(img, text, tuple((img_cor_points[1][0] - 5, img_cor_points[1][1] - 20)), 7, 1,
+                                        (0, 50, 255), 2, cv2.LINE_AA)
+
+                            world_cor_points = box3d.world_cor_points
+                            if not world_cor_points is None:
+                                bottom = world_cor_points[[0, 2], :][:, [5, 6, 7, 8]]
+                                bottom = bottom.transpose()
+                                bottom = (bottom / resolution).astype(np.int32)
+                                bottom[:, 0] = bottom[:, 0] + world_im.shape[1] // 2
+                                cv2.fillConvexPoly(world_im, bottom, 255)
+
                     yaw = box3d.global_yaw
+
                 except:
                     yaw = ret[cls_ind][j][11]
 
@@ -301,9 +314,33 @@ def demo(opt):
         predictions[image_name.split('/')[-1].split('.j')[0]] = ' '.join(predictions[image_name.split('/')[-1].split('.j')[0]])
 
         if debug:
-            fig = plt.figure(figsize=(10, 10))
-            plt.imshow(img[:, :, ::-1])
-            plt.savefig(os.path.join(optim_output_folder, image_name.split('/')[-1].split('.')[0] + '.jpg'),  bbox_inches='tight', pad_inches=0)
+            # fig = plt.figure(figsize=(20, 20))
+            # plt.imshow(img[:, :, ::-1])
+            # plt.savefig(os.path.join(optim_output_folder, image_name.split('/')[-1].split('.')[0] + '.jpg'),  bbox_inches='tight', pad_inches=0)
+            # # plt.show()
+            # plt.close(fig)
+
+            target_w = world_im.shape[1] * img.shape[0] / world_im.shape[0]
+            world_im = cv2.resize(world_im, (int(target_w), img.shape[0]))
+            world_im[world_im > 0] = 255
+            world_im = cv2.applyColorMap(world_im, cv2.COLORMAP_JET)
+            world_im = cv2.flip(world_im, 0)
+
+            h, w = world_im.shape[:2]
+            lw = 3
+            for i in range(1, 20):
+                row = int(h / 20 * i)
+                cv2.line(world_im, (0, row), (w, row), (128, 128, 128), lw)
+            for i in range(1, 6):
+                col = int(w / 6 * i)
+                cv2.line(world_im, (col, 0), (col, h), (128, 128, 128), lw)
+
+            comb = np.concatenate((img[:, :, ::-1], world_im), axis=1)
+
+            fig = plt.figure(figsize=(20, 20))
+            plt.imshow(comb)
+            plt.savefig(os.path.join(optim_output_folder, image_name.split('/')[-1].split('.')[0] + '.jpg'),
+                        bbox_inches='tight', pad_inches=0)
             # plt.show()
             plt.close(fig)
 

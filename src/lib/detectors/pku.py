@@ -122,7 +122,7 @@ class PkuDetector(BaseDetector):
     def show_results(self, debugger, image, results, image_or_path_or_tensor):
         debugger.add_3d_detection(
             image, results, self.this_calib, self.opt,
-            center_thresh=self.opt.vis_thresh, img_id='add_pred')
+            center_thresh=self.opt.peak_thresh, img_id='add_pred')
         if self.opt.debug > 0:
             fig = plt.figure(figsize=(19, 20))
             ax = plt.Axes(fig, [0., 0., 1., 1.])

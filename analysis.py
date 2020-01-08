@@ -320,6 +320,9 @@ if __name__ == "__main__":
     all_r = []
     all_p = []
     all_y = []
+    all_x = []
+    all_ys  =[]
+    all_z = []
     for id in tqdm(range(len(train))):#len(train)):
         gt = {'objects': []}
 
@@ -337,6 +340,9 @@ if __name__ == "__main__":
         all_r += rolls
         all_p += pitches
         all_y += yaws
+        all_x += xs
+        all_ys +=ys
+        all_z += zs
         # image = cv2.imread(
         #     '/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku/data/images/train_images/' + img_name + '.jpg')
         # img = np.array(image[:, :, ::-1])
@@ -388,12 +394,23 @@ if __name__ == "__main__":
     all_r = np.array(all_r, dtype=np.float)
     all_p = np.array(all_p, dtype=np.float)
     all_y = np.array(all_y, dtype=np.float)
-
+    all_x = np.array(all_x, dtype=np.float)
+    all_ys = np.array(all_ys, dtype=np.float)
+    all_z = np.array(all_z, dtype=np.float)
 
     def rotate(x, angle):
         x = x + angle
         x = x - (x + np.pi) // (2 * np.pi) * 2 * np.pi
         return x
+
+
+    plt.hist(all_x, normed=False, bins=200)
+    plt.show()
+    plt.hist(all_ys, normed=False, bins=200)
+    plt.show()
+    plt.hist(all_z, normed=False, bins=200)
+    plt.show()
+
 
     # rotate_r = np.array([rotate(x, np.pi) for x in all_r])
     plt.hist(all_r, normed=True, bins=200)

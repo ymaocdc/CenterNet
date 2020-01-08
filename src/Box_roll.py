@@ -69,7 +69,7 @@ class Box(object):
 
             self.img_cor_points, self.world_cor_points = self.map_to_2d(
                 self.tx, self.ty, self.tz,
-                self.L, self.W, self.H,
+                5, 2, 1.6,
                 self.global_yaw, -self.pitch, -self.roll)
 
             # self.img_cor_points, self.world_cor_points = self.map_to_2d(
@@ -196,7 +196,7 @@ class Box(object):
                         res = np.matmul(A, Tran) - b
 
                         tx, ty, tz = [float(np.around(tran, 2)) for tran in Tran]
-                        # img_cor_points, world_cor_points = Box.map_to_2d(tx, ty, tz, L, W, H, np.pi*2-try_global_yaw, self.pitch, 0)
+                        # img_cor_points, world_cor_points = Box.map_to_2d(tx, ty, tz, L, W, H, self.global_yaw, -self.pitch, -self.roll)
                         # proj_bbox = [min(img_cor_points[:,0]), min(img_cor_points[:,1]), max(img_cor_points[:,0]), max(img_cor_points[:,1])]
                         # iou = self.get_iou(bbox, proj_bbox)
 
