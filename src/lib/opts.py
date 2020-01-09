@@ -196,6 +196,11 @@ class opts(object):
                              help='regress roll.')
     self.parser.add_argument('--roll_weight', type=float, default=1,
                              help='loss weight for roll.')
+    self.parser.add_argument('--reg_q', action='store_true', default=False,
+                             help='regress quaternion.')
+    self.parser.add_argument('--q_weight', type=float, default=1,
+                             help='loss weight for quaternion.')
+
     self.parser.add_argument('--peak_thresh', type=float, default=0.2)
     
     # task
@@ -371,6 +376,8 @@ class opts(object):
           opt.heads.update({'reg_FPE': 2})
       if opt.reg_roll:
           opt.heads.update({'reg_roll': 1})
+      if opt.reg_q:
+          opt.heads.update({'reg_q': 4})
     else:
       assert 0, 'task not defined!'
     print('heads', opt.heads)

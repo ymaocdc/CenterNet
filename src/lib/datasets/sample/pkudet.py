@@ -24,6 +24,67 @@ class PKUDataset(data.Dataset):
     def _convert_alpha(self, alpha):
         return math.radians(alpha + 45) if self.alpha_in_degree else alpha
 
+    def euler_angles_to_quaternions(self, angle):
+        """Convert euler angels to quaternions representation.
+        Input:
+            angle: n x 3 matrix, each row is [roll, pitch, yaw]
+        Output:
+            q: n x 4 matrix, each row is corresponding quaternion.
+        """
+
+        in_dim = np.ndim(angle)
+        if in_dim == 1:
+            angle = angle[None, :]
+
+        n = angle.shape[0]
+        roll, pitch, yaw = angle[:, 0], angle[:, 1], angle[:, 2]
+        q = np.zeros((n, 4))
+
+        cy = np.cos(yaw * 0.5)
+        sy = np.sin(yaw * 0.5)
+        cr = np.cos(roll * 0.5)
+        sr = np.sin(roll * 0.5)
+        cp = np.cos(pitch * 0.5)
+        sp = np.sin(pitch * 0.5)
+
+        q[:, 0] = cy * cr * cp + sy * sr * sp
+        q[:, 1] = cy * sr * cp - sy * cr * sp
+        q[:, 2] = cy * cr * sp + sy * sr * cp
+        q[:, 3] = sy * cr * cp - cy * sr * sp
+
+        return q
+
+    def quaternion_upper_hemispher(self, q):
+        """
+        The quaternion q and −q represent the same rotation be-
+        cause a rotation of θ in the direction v is equivalent to a
+        rotation of 2π − θ in the direction −v. One way to force
+        uniqueness of rotations is to require staying in the “upper
+        half” of S 3 . For example, require that a ≥ 0, as long as
+        the boundary case of a = 0 is handled properly because of
+        antipodal points at the equator of S 3 . If a = 0, then require
+        that b ≥ 0. However, if a = b = 0, then require that c ≥ 0
+        because points such as (0,0,−1,0) and (0,0,1,0) are the
+        same rotation. Finally, if a = b = c = 0, then only d = 1 is
+        allowed.
+        :param q:
+        :return:
+        """
+        a, b, c, d = q
+        if a < 0:
+            q = -q
+        if a == 0:
+            if b < 0:
+                q = -q
+            if b == 0:
+                if c < 0:
+                    q = -q
+                if c == 0:
+                    print(q)
+                    q[3] = 0
+
+        return q
+
     def __getitem__(self, index):
         img_id = self.images[index]
         img_info = self.coco.loadImgs(ids=[img_id])[0]
@@ -89,6 +150,9 @@ class PKUDataset(data.Dataset):
         if self.opt.reg_roll:
             reg_roll = np.zeros((self.max_objs, 1), dtype=np.float32)
             reg_roll_mask = np.zeros((self.max_objs), dtype=np.uint8)
+        if self.opt.reg_q:
+            reg_q = np.zeros((self.max_objs, 4), dtype=np.float32)
+            reg_q_mask = np.zeros((self.max_objs), dtype=np.uint8)
 
         hm = np.zeros(
             (num_classes, self.opt.output_h, self.opt.output_w), dtype=np.float32)
@@ -164,12 +228,6 @@ class PKUDataset(data.Dataset):
                     continue
                 draw_gaussian(hm[cls_id], ct, radius)
 
-                alpha = ann['local_yaw']
-                alpha = np.remainder(alpha, np.pi*2)
-                if flipped:
-                    alpha = np.pi*2-alpha
-                if alpha < 0:
-                    print('aaa')
                 wh[k] = 1. * w, 1. * h
                 gt_det.append([ct[0], ct[1], 1] + \
                               self._alpha_to_8(self._convert_alpha(alpha)) + \
@@ -229,6 +287,20 @@ class PKUDataset(data.Dataset):
                     reg_FPE_mask[k] = 1
                     gt_det[-1] = gt_det[-1] + [ct[0] - FPE[0], ct[0] - FPE[1]]
 
+                yaw, pitch, roll = ann['global_yaw'], ann['pitch'], ann['roll']
+                if yaw > np.pi:
+                    yaw = yaw - np.pi * 2
+                pitch, yaw, roll = -yaw, -pitch, -roll
+                q = self.euler_angles_to_quaternions(np.array([yaw, pitch, roll]))[0]
+                q = self.quaternion_upper_hemispher(q)
+
+                if self.opt.reg_q:
+                    reg_q[k] = q
+                    reg_q_mask[k] = 1
+                    if flipped:
+                        reg_q_mask[k] = 0
+                    gt_det[-1] = gt_det[-1] + q.tolist()
+
                 dep[k] = ann['3D_location'][2]
                 dim[k] = ann['3D_dimension']
                 # print('        cat dim', cls_id, dim[k])
@@ -257,6 +329,8 @@ class PKUDataset(data.Dataset):
             ret.update({'wh': wh})
         if self.opt.reg_offset:
             ret.update({'reg': reg})
+        if self.opt.reg_q:
+            ret.update({'reg_q': reg_q, 'reg_q_mask': reg_q_mask})
         if self.opt.debug > 0 or not ('train' in self.split):
             gt_det = np.array(gt_det, dtype=np.float32) if len(gt_det) > 0 else \
                 np.zeros((1, 18), dtype=np.float32)

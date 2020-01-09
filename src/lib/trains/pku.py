@@ -28,7 +28,7 @@ class DddLoss(torch.nn.Module):
         opt = self.opt
 
         hm_loss, dep_loss, rot_loss, dim_loss, pitch_loss, reg_3d_center_loss, reg_BPE_loss, reg_FPE_loss = 0, 0, 0, 0, 0, 0, 0, 0
-        wh_loss, off_loss, roll_loss = 0, 0, 0
+        wh_loss, off_loss, roll_loss, req_q_loss = 0, 0, 0, 0
         for s in range(opt.num_stacks):
             output = outputs[s]
             output['hm'] = _sigmoid(output['hm'])
@@ -72,12 +72,15 @@ class DddLoss(torch.nn.Module):
             if opt.reg_FPE and opt.reg_FPE_weight >= 0:
                 reg_FPE_loss += self.crit_reg(output['reg_FPE'], batch['reg_FPE_mask'],
                                               batch['ind'], batch['reg_FPE']) / opt.num_stacks
+            if opt.reg_q and opt.reg_q_weight >= 0:
+                req_q_loss += self.crit_reg(output['reg_q'], batch['reg_q_mask'],
+                                          batch['ind'], batch['reg_q']) / opt.num_stacks
 
         loss = opt.hm_weight * hm_loss + opt.dep_weight * dep_loss + \
                opt.dim_weight * dim_loss + opt.rot_weight * rot_loss + \
                opt.wh_weight * wh_loss + opt.off_weight * off_loss + opt.pitch_weight * pitch_loss + \
                opt.reg_3d_center_weight*reg_3d_center_loss + opt.reg_BPE_weight * reg_BPE_loss + \
-               opt.reg_FPE_weight * reg_FPE_loss
+               opt.reg_FPE_weight * reg_FPE_loss + req_q_loss*opt.reg_q_weight
 
 
         loss_stats = {'loss': loss, 'hm_loss': hm_loss, 'dep_loss': dep_loss,
@@ -93,6 +96,8 @@ class DddLoss(torch.nn.Module):
             loss_stats.update({'reg_BPE_loss': reg_BPE_loss})
         if self.opt.reg_FPE:
             loss_stats.update({'reg_FPE_loss': reg_FPE_loss})
+        if self.opt.reg_q:
+            loss_stats.update({'reg_q_loss': req_q_loss})
         return loss, loss_stats
 
 
@@ -113,6 +118,8 @@ class PkuTrainer(BaseTrainer):
             loss_states = loss_states + ['reg_BPE_loss']
         if self.opt.reg_roll:
             loss_states = loss_states + ['reg_roll_loss']
+        if self.opt.reg_q:
+            loss_states = loss_states + ['reg_q']
         loss = DddLoss(opt)
         return loss_states, loss
 
