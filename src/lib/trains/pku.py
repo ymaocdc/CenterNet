@@ -72,32 +72,38 @@ class DddLoss(torch.nn.Module):
             if opt.reg_FPE and opt.reg_FPE_weight >= 0:
                 reg_FPE_loss += self.crit_reg(output['reg_FPE'], batch['reg_FPE_mask'],
                                               batch['ind'], batch['reg_FPE']) / opt.num_stacks
-            if opt.reg_q and opt.reg_q_weight >= 0:
+            if opt.reg_q and opt.q_weight >= 0:
                 req_q_loss += self.crit_reg(output['reg_q'], batch['reg_q_mask'],
                                           batch['ind'], batch['reg_q']) / opt.num_stacks
 
         loss = opt.hm_weight * hm_loss + opt.dep_weight * dep_loss + \
                opt.dim_weight * dim_loss + opt.rot_weight * rot_loss + \
-               opt.wh_weight * wh_loss + opt.off_weight * off_loss + opt.pitch_weight * pitch_loss + \
-               opt.reg_3d_center_weight*reg_3d_center_loss + opt.reg_BPE_weight * reg_BPE_loss + \
-               opt.reg_FPE_weight * reg_FPE_loss + req_q_loss*opt.reg_q_weight
+               opt.wh_weight * wh_loss + opt.off_weight * off_loss
 
-
-        loss_stats = {'loss': loss, 'hm_loss': hm_loss, 'dep_loss': dep_loss,
+        loss_stats = {'hm_loss': hm_loss, 'dep_loss': dep_loss,
                       'dim_loss': dim_loss, 'rot_loss': rot_loss,
-                      'wh_loss': wh_loss, 'off_loss': off_loss, 'roll_loss': roll_loss}
+                      'wh_loss': wh_loss, 'off_loss': off_loss}
+
         if self.opt.reg_pitch:
+            loss += opt.pitch_weight * pitch_loss
             loss_stats.update({'reg_pitch_loss': pitch_loss})
         if self.opt.reg_roll:
+            loss += opt.reg_roll_weight * roll_loss
             loss_stats.update({'reg_roll_loss': roll_loss})
         if self.opt.reg_3d_center:
+            loss += opt.reg_3d_center_weight*reg_3d_center_loss
             loss_stats.update({'reg_3d_center_loss': reg_3d_center_loss})
         if self.opt.reg_BPE:
+            loss += opt.reg_BPE_weight * reg_BPE_loss
             loss_stats.update({'reg_BPE_loss': reg_BPE_loss})
         if self.opt.reg_FPE:
+            loss += opt.reg_FPE_weight * reg_FPE_loss
             loss_stats.update({'reg_FPE_loss': reg_FPE_loss})
         if self.opt.reg_q:
+            loss += req_q_loss*opt.q_weight
             loss_stats.update({'reg_q_loss': req_q_loss})
+        loss_stats.update({'loss': loss})
+
         return loss, loss_stats
 
 
@@ -119,7 +125,7 @@ class PkuTrainer(BaseTrainer):
         if self.opt.reg_roll:
             loss_states = loss_states + ['reg_roll_loss']
         if self.opt.reg_q:
-            loss_states = loss_states + ['reg_q']
+            loss_states = loss_states + ['reg_q_loss']
         loss = DddLoss(opt)
         return loss_states, loss
 

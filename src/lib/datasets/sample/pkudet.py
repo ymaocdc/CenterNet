@@ -124,8 +124,8 @@ class PKUDataset(data.Dataset):
                              (self.opt.input_w, self.opt.input_h),
                              flags=cv2.INTER_LINEAR)
         inp = (inp.astype(np.float32) / 255.)
-        # if self.split == 'train' and not self.opt.no_color_aug:
-        #   color_aug(self._data_rng, inp, self._eig_val, self._eig_vec)
+        if self.split == 'train' and not self.opt.no_color_aug:
+          color_aug(self._data_rng, inp, self._eig_val, self._eig_vec)
         inp = (inp - self.mean) / self.std
         if flipped:
             inp = inp[:,::-1,:].copy()
@@ -229,14 +229,9 @@ class PKUDataset(data.Dataset):
                 draw_gaussian(hm[cls_id], ct, radius)
 
                 wh[k] = 1. * w, 1. * h
-                gt_det.append([ct[0], ct[1], 1] + \
-                              self._alpha_to_8(self._convert_alpha(alpha)) + \
-                              ann['3D_location'] + (np.array(ann['3D_dimension']) / 1).tolist() + [cls_id])
 
-                if self.opt.reg_bbox:
-                    gt_det[-1] = gt_det[-1][:-1] + [w, h] + [gt_det[-1][-1]]
                 # print(ann['bbox'][:2], np.rad2deg(alpha))
-
+                alpha = ann['local_yaw']
                 if alpha < np.pi/2+np.pi/6. or alpha > np.pi/2*3-np.pi/6:
                     rotbin[k, 0] = 1
                     if alpha < np.pi/2 +np.pi/6:
@@ -247,6 +242,11 @@ class PKUDataset(data.Dataset):
                     alpha = alpha-np.pi
                     rotbin[k, 1] = 1
                     rotres[k, 1] = alpha
+                gt_det.append([ct[0], ct[1], 1] + \
+                              self._alpha_to_8(self._convert_alpha(alpha)) + \
+                              ann['3D_location'] + (np.array(ann['3D_dimension']) / 1).tolist() + [cls_id])
+                if self.opt.reg_bbox:
+                    gt_det[-1] = gt_det[-1][:-1] + [w, h] + [gt_det[-1][-1]]
 
                 if self.opt.reg_pitch:
                     pitch = ann['pitch']
