@@ -121,10 +121,10 @@ def ddd_post_process_3d(dets, calibs, opt):
 
         if opt.reg_q:
           quaternions = dets[i][cls_ind][j][11:15]
-          norm = np.linalg.norm(quaternions, axis=0)
-          rot_pred_norm = quaternions / norm
+          # norm = np.linalg.norm(quaternions, axis=0)
+          # quaternions = quaternions / norm
           # normalise the unit quaternion here
-          euler_angle = quaternion_to_euler_angle(rot_pred_norm)
+          euler_angle = quaternion_to_euler_angle(quaternions)
         else:
           euler_angle = np.array([0,0,0], dtype=np.float)
         bbox = [center[0] - wh[0] / 2, center[1] - wh[1] / 2,

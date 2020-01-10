@@ -291,9 +291,12 @@ class PKUDataset(data.Dataset):
                 if yaw > np.pi:
                     yaw = yaw - np.pi * 2
                 pitch, yaw, roll = -yaw, -pitch, -roll
-                q = self.euler_angles_to_quaternions(np.array([yaw, pitch, roll]))[0]
-                q = self.quaternion_upper_hemispher(q)
-
+                qn = self.euler_angles_to_quaternions(np.array([yaw, pitch, roll]))[0]
+                q = self.quaternion_upper_hemispher(qn)
+                # if (q-qn).sum() > 0:
+                #     print( '>0:   ', ann['global_yaw'], ann['pitch'], ann['roll'])
+                # else:
+                #     print('=0:   ',ann['global_yaw'], ann['pitch'], ann['roll'])
                 if self.opt.reg_q:
                     reg_q[k] = q
                     reg_q_mask[k] = 1

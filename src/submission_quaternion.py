@@ -313,7 +313,7 @@ def demo(opt):
             plt.imshow(comb)
             plt.savefig(os.path.join(optim_output_folder, image_name.split('/')[-1].split('.')[0] + '.jpg'),
                         bbox_inches='tight', pad_inches=0)
-            # plt.show()
+            plt.show()
             plt.close(fig)
 
         # optm_results = res2dict(ret, image_name, opt, center_thresh=opt.peak_thresh)
