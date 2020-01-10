@@ -10,6 +10,7 @@ import json
 from collections import namedtuple
 import pycocotools.mask as cocoMask
 from tqdm import tqdm
+import glob
 
 class NumpyEncoder(json.JSONEncoder):
     """Helper class to help serialize numpy ndarray"""
@@ -342,10 +343,10 @@ if __name__ == "__main__":
 
     plt.close()
     plt.rcParams["axes.grid"] = False
-    output_folder = '/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku/with_mask_labels'
+    output_folder = '/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku/apolloe_gt_json'
 
-    import glob
-    imgs = glob.glob(os.path.join('/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku/data/images/train_images/', '*jpg'))
+    im_dir = '/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku/data/images/train_images/'
+    imgs = glob.glob(os.path.join(im_dir, '*jpg'))
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
     image = cv2.imread(imgs[0])
@@ -360,7 +361,7 @@ if __name__ == "__main__":
         # if os.path.exists(os.path.join(output_folder, img_name + '.json')):
         #     continue
 
-        image = cv2.imread('/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku/data/images/train_images/' + img_name + '.jpg')
+        image = cv2.imread(im_dir + img_name + '.jpg')
         img = image.copy()
         # fig, ax = plt.subplots(figsize=(40, 40))
         items = pred_string.split(' ')
@@ -524,8 +525,8 @@ if __name__ == "__main__":
             #               (obj['2D_bbox_xyxy'][2], obj['2D_bbox_xyxy'][3]), (0, 0, 255), 5)
 
 
-        # with open(os.path.join(output_folder, img_name + '.json'), 'w') as fout:
-        #     json.dump(gt, fout, cls=NumpyEncoder)
+        with open(os.path.join(output_folder, img_name + '.json'), 'w') as fout:
+            json.dump(gt, fout, cls=NumpyEncoder)
 
         # image = Image.fromarray(img)
         # alpha = .5
