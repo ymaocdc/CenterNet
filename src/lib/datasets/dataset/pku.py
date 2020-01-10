@@ -24,21 +24,13 @@ class PKU(data.Dataset):
         super(PKU, self).__init__()
         self.data_dir = os.path.join(opt.data_dir)
         self.root_dir = opt.root_dir
-        # self.img_dir = os.path.join(self.data_dir, 'images')
-        # if opt.trainval:
-        #     split = 'trainval' if split == 'train' else 'test'
-        #     self.img_dir = os.path.join(self.data_dir, 'images', split)
-        #     self.annot_path = os.path.join(
-        #         self.data_dir, 'annotations', 'kitti_{}.json').format(split)
-        # else:
-        #     self.annot_path = os.path.join(self.data_dir,
-        #                                    'annotations', 'kitti_{}_{}.json').format(opt.kitti_split, split)
+
 
         # split =
         self.img_dir = os.path.join(self.data_dir, 'images', '{}_images'.format(split))
-        self.annot_path = os.path.join(self.data_dir, 'annotations', '{}_coco_format_correct_yaw.json').format(split)
+        # self.annot_path = os.path.join(self.data_dir, 'annotations', '{}_coco_format_correct_yaw.json').format(split)
 
-        # self.annot_path = os.path.join(self.root_dir, 'val_coco_format_overfit.json')
+        self.annot_path = os.path.join(self.data_dir, 'annotations', 'train_coco_format_overfit.json')
         self.max_objs = 50
         self.class_name = [
             '__background__', '2x', '3x', 'SUV']

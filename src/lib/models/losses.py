@@ -181,8 +181,8 @@ class L1Loss(nn.Module):
   def forward(self, output, mask, ind, target):
     pred = _transpose_and_gather_feat(output, ind)
     mask = mask.unsqueeze(2).expand_as(pred).float()
-    # loss = F.l1_loss(pred * mask, target * mask, reduction='mean')
-    loss = (pred * mask - target * mask).sum() / mask.sum()
+    loss = F.l1_loss(pred * mask, target * mask, reduction='mean')
+    # loss = (pred * mask - target * mask).abs().sum() / mask.sum()
     return loss
 
 class BinRotLoss(nn.Module):

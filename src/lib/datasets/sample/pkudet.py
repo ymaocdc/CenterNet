@@ -290,18 +290,18 @@ class PKUDataset(data.Dataset):
                 yaw, pitch, roll = ann['global_yaw'], ann['pitch'], ann['roll']
                 if yaw > np.pi:
                     yaw = yaw - np.pi * 2
-                pitch, yaw, roll = -yaw, -pitch, -roll
+                # pitch, yaw, roll = -yaw, -pitch, -roll
                 qn = self.euler_angles_to_quaternions(np.array([yaw, pitch, roll]))[0]
                 q = self.quaternion_upper_hemispher(qn)
-                # if (q-qn).sum() > 0:
-                #     print( '>0:   ', ann['global_yaw'], ann['pitch'], ann['roll'])
-                # else:
-                #     print('=0:   ',ann['global_yaw'], ann['pitch'], ann['roll'])
+                from utils.post_process import quaternion_to_euler_angle
+                # norm = np.linalg.norm(q, axis=0)
+                # q = q / norm
+                euler_angle = quaternion_to_euler_angle(q)
+                if np.abs((euler_angle - [yaw, pitch, roll])).sum()>0.02:
+                    print(euler_angle - [yaw, pitch, roll])
                 if self.opt.reg_q:
                     reg_q[k] = q
                     reg_q_mask[k] = 1
-                    if flipped:
-                        reg_q_mask[k] = 0
                     gt_det[-1] = gt_det[-1] + q.tolist()
 
                 dep[k] = ann['3D_location'][2]

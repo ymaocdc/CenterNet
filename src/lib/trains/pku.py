@@ -42,7 +42,7 @@ class DddLoss(torch.nn.Module):
 
             hm_loss += self.crit(output['hm'], batch['hm']) / opt.num_stacks
             if opt.dep_weight >= 0:
-                dep_loss += self.crit_reg(output['dep'], batch['reg_mask'],
+                dep_loss += self.crit_reg(output['dep'], batch['reg_q_mask'],
                                           batch['ind'], batch['dep']) / opt.num_stacks
             if opt.dim_weight >= 0:
                 dim_loss += self.crit_reg(output['dim'], batch['reg_mask'],

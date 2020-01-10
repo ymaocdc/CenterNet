@@ -11,7 +11,7 @@ class NumpyEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-mode = 'val'
+mode = 'train'
 
 root_folder = '/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku'
 image_folder = os.path.join(root_folder, 'data/images', '{}_images'.format(mode))
@@ -61,9 +61,9 @@ assert len(im_files) == len(label_files)
 annotations["images"] = []
 annotations["annotations"] = []
 num_obj = 0
-for image_id, im_file in enumerate(tqdm(im_files[4000:])):
-    # if not 'ID_0ad448f58' in im_file:
-    #     continue
+for image_id, im_file in enumerate(tqdm(im_files)):
+    if not 'ID_0ad448f58' in im_file:
+        continue
     width = 3384
     height = 2710
     file_name = im_file.split('/')[-1]
@@ -110,6 +110,6 @@ for image_id, im_file in enumerate(tqdm(im_files[4000:])):
         )
         num_obj = num_obj + 1
 
-json_path = os.path.join(output_folder, '{}_coco_format_correct_yaw'.format(mode)+".json")
+json_path = os.path.join(output_folder, '{}_coco_format_overfit'.format(mode)+".json")
 with open(json_path, "w") as f:
     json.dump(annotations, f,cls=NumpyEncoder)
