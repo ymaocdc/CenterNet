@@ -385,44 +385,44 @@ class Debugger(object):
     for cat in dets:
       for i in range(len(dets[cat])):
         cl = (self.colors[cat - 1, 0, 0]).tolist()
-        if dets[cat][i, 12] > center_thresh:
-          dim = dets[cat][i, 5:8]
-          loc  = dets[cat][i, 8:11]
-          rot_y = dets[cat][i, 11]
-          bbox = dets[cat][i, 1:5]
+        if dets[cat][i, 13] > center_thresh:
+          # dim = dets[cat][i, 5:8]
+          # loc  = dets[cat][i, 8:11]
+          # rot_y = dets[cat][i, 11]
+          bbox = dets[cat][i, 0:4]
 
           # centroid_3d = np.array(loc, dtype=np.float32).reshape(1, 3)
           # centroid_2d = project_to_image(centroid_3d, calib)[0]
           # cv2.circle(self.imgs[img_id], tuple([centroid_2d[0], centroid_2d[1]]), 10, (0, 255, 0), -1)
 
-          pitch = dets[cat][i, 13] if opt.reg_pitch else None
-          BPE = dets[cat][i, 14:16] if opt.reg_BPE else None
-          FPE = dets[cat][i, 16:18] if opt.reg_FPE else None
+          # pitch = dets[cat][i, 13] if opt.reg_pitch else None
+          # BPE = dets[cat][i, 14:16] if opt.reg_BPE else None
+          # FPE = dets[cat][i, 16:18] if opt.reg_FPE else None
 
           # convert euler angle to rotation matrix
 
-          yaw = rot_y
-          roll = 0
-          x, y, z = loc
-          x_l, y_l, z_l = dim[1]/2, dim[0]/2, dim[2]/2
-          Rt = np.eye(4)
-          t = np.array([x, y, z])
-          Rt[:3, 3] = t
-          Rt[:3, :3] = self.euler_to_Rot(yaw, pitch, roll).T
-          Rt = Rt[:3, :]
-          P = np.array([[0, 0, 0, 1],
-                        [x_l, y_l, -z_l, 1],
-                        [x_l, y_l, z_l, 1],
-                        [-x_l, y_l, z_l, 1],
-                        [-x_l, y_l, -z_l, 1],
-                        [x_l, -y_l, -z_l, 1],
-                        [x_l, -y_l, z_l, 1],
-                        [-x_l, -y_l, z_l, 1],
-                        [-x_l, -y_l, -z_l, 1]]).T
-          img_cor_points = np.dot(calib[:3,:3], np.dot(Rt, P))
-          img_cor_points = img_cor_points.T
-          img_cor_points[:, 0] /= img_cor_points[:, 2]
-          img_cor_points[:, 1] /= img_cor_points[:, 2]
+          # yaw = rot_y
+          # roll = 0
+          # x, y, z = loc
+          # x_l, y_l, z_l = dim[1]/2, dim[0]/2, dim[2]/2
+          # Rt = np.eye(4)
+          # t = np.array([x, y, z])
+          # Rt[:3, 3] = t
+          # Rt[:3, :3] = self.euler_to_Rot(yaw, pitch, roll).T
+          # Rt = Rt[:3, :]
+          # P = np.array([[0, 0, 0, 1],
+          #               [x_l, y_l, -z_l, 1],
+          #               [x_l, y_l, z_l, 1],
+          #               [-x_l, y_l, z_l, 1],
+          #               [-x_l, y_l, -z_l, 1],
+          #               [x_l, -y_l, -z_l, 1],
+          #               [x_l, -y_l, z_l, 1],
+          #               [-x_l, -y_l, z_l, 1],
+          #               [-x_l, -y_l, -z_l, 1]]).T
+          # img_cor_points = np.dot(calib[:3,:3], np.dot(Rt, P))
+          # img_cor_points = img_cor_points.T
+          # img_cor_points[:, 0] /= img_cor_points[:, 2]
+          # img_cor_points[:, 1] /= img_cor_points[:, 2]
           # call this function before chage the dtype
           # img_cor_2_world_cor()
 
@@ -430,10 +430,10 @@ class Debugger(object):
           # self.imgs[img_id] = self.draw_line(self.imgs[img_id], img_cor_points)
           # self.imgs[img_id] = self.draw_points(self.imgs[img_id], img_cor_points)
 
-          cv2.circle(self.imgs[img_id], (int(img_cor_points[0,0]), int(img_cor_points[0,1])), 10, (0,0,255), -1)
+          # cv2.circle(self.imgs[img_id], (int(img_cor_points[0,0]), int(img_cor_points[0,1])), 10, (0,0,255), -1)
           self.add_coco_bbox(
-            bbox, cat - 1, dets[cat][i, 12],
-            show_txt=show_txt, img_id=img_id, BPE=BPE, FPE=FPE)
+            bbox, cat - 1, dets[cat][i, 13],
+            show_txt=show_txt, img_id=img_id)
 
           # import matplotlib.pyplot as plt
           # plt.imshow(self.imgs[img_id][:,:,::-1])

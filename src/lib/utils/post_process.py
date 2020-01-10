@@ -4,7 +4,7 @@ from __future__ import print_function
 
 import numpy as np
 from .image import transform_preds
-from .ddd_utils import ddd2locrot
+from .ddd_utils import ddd2locrot, unproject_2d_to_3d
 
 
 def get_pred_depth(depth):
@@ -21,7 +21,32 @@ def get_alpha(rot):
   alpha2 = np.arctan2(rot[:, 6], rot[:, 7]) + np.pi
   # alpha2 = np.arctan(rot[:, 6] / rot[:, 7])+np.pi
   return alpha1 * idx + alpha2 * (1 - idx)
-  
+
+import math
+def quaternion_to_euler_angle(q):
+  """Convert quaternion to euler angel.
+  Input:
+      q: 1 * 4 vector,
+  Output:
+      angle: 1 x 3 vector, each row is [roll, pitch, yaw]
+  """
+  w, x, y, z = q
+  t0 = +2.0 * (w * x + y * z)
+  t1 = +1.0 - 2.0 * (x * x + y * y)
+  X = math.atan2(t0, t1)
+
+  t2 = +2.0 * (w * y - z * x)
+  t2 = +1.0 if t2 > +1.0 else t2
+  t2 = -1.0 if t2 < -1.0 else t2
+  Y = math.asin(t2)
+
+  t3 = +2.0 * (w * z + x * y)
+  t4 = +1.0 - 2.0 * (y * y + z * z)
+  Z = math.atan2(t3, t4)
+
+  return np.array([X, Y, Z], dtype=np.float32)
+
+
 
 def ddd_post_process_2d(dets, c, s, opt):
   # dets: batch x max_dets x dim
@@ -38,73 +63,37 @@ def ddd_post_process_2d(dets, c, s, opt):
           xymin, c[i], s[i], (opt.output_w, opt.output_h))
     dets[i, :, 15:17] = transform_preds(
       xymax, c[i], s[i], (opt.output_w, opt.output_h))
-    dets[i, :, 19:21] = transform_preds(
-      dets[i, :, 19:21], c[i], s[i], (opt.output_w, opt.output_h))
+    dets[i, :, 18:20] = transform_preds(
+      dets[i, :, 18:20], c[i], s[i], (opt.output_w, opt.output_h))
 
     if opt.crop_half:
       dets[i, :, 1] += opt.crop_from
       dets[i, :, 16] += opt.crop_from
-      dets[i, :, 20] += opt.crop_from
-
-    lbpe = transform_preds(
-        np.array([dets[i, :, 21], xymax[:, 1]], dtype=np.float).transpose(), c[i], s[i], (opt.output_w, opt.output_h))
-    rbpe = transform_preds(
-        np.array([dets[i, :, 22], xymax[:, 1]], dtype=np.float).transpose(), c[i], s[i], (opt.output_w, opt.output_h))
-    dets[i, :, 21] = lbpe[:, 0]
-    dets[i, :, 22] = rbpe[:, 0]
-
-    lfpe = transform_preds(
-      np.array([dets[i, :, 23], xymax[:, 1]], dtype=np.float).transpose(), c[i], s[i], (opt.output_w, opt.output_h))
-    rfpe = transform_preds(
-      np.array([dets[i, :, 24], xymax[:, 1]], dtype=np.float).transpose(), c[i], s[i], (opt.output_w, opt.output_h))
-    dets[i, :, 23] = lfpe[:, 0]
-    dets[i, :, 24] = rfpe[:, 0]
-
+      dets[i, :, 19] += opt.crop_from
 
     classes = dets[i, :, 17]
     for j in range(opt.num_classes):
       inds = (classes == j)
       top_preds[j + 1] = np.concatenate([
         dets[i, inds, :3].astype(np.float32),
-        get_alpha(dets[i, inds, 3:11])[:, np.newaxis].astype(np.float32),
-        get_pred_depth(dets[i, inds, 11:12]).astype(np.float32),
+        dets[i, inds, 11:12].astype(np.float32),
         dets[i, inds, 12:15].astype(np.float32)], axis=1)
       if include_wh:
         top_preds[j + 1] = np.concatenate([
           top_preds[j + 1],
           dets[i, inds, 15:17].astype(np.float32)], axis=1)
-      if opt.reg_pitch:
-        top_preds[j + 1] = np.concatenate([top_preds[j + 1], dets[i, inds, 18][:, np.newaxis].astype(np.float32)], axis=1)
-      else:
-        top_preds[j + 1] = np.concatenate(
-          [top_preds[j + 1], np.zeros((top_preds[j + 1].shape[0], 1), dtype=np.float32)], axis=1)
-
       if opt.reg_3d_center:
         top_preds[j + 1] = np.concatenate(
-          [top_preds[j + 1], dets[i, inds, 19:21].astype(np.float32)], axis=1)
+          [top_preds[j + 1], dets[i, inds, 18:20].astype(np.float32)], axis=1)
       else:
         top_preds[j + 1] = np.concatenate(
           [top_preds[j + 1], np.zeros((top_preds[j + 1].shape[0], 2), dtype=np.float32)], axis=1)
 
-
-      if opt.reg_BPE:
-        top_preds[j + 1] = np.concatenate(
-          [top_preds[j + 1], dets[i, inds, 21:23].astype(np.float32)], axis=1)
+      if opt.reg_q:
+        top_preds[j + 1] = np.concatenate([top_preds[j + 1], dets[i, inds, 20:24].astype(np.float32)], axis=1)
       else:
         top_preds[j + 1] = np.concatenate(
-          [top_preds[j + 1], np.zeros((top_preds[j + 1].shape[0], 2), dtype=np.float32)], axis=1)
-
-      if opt.reg_FPE:
-        top_preds[j + 1] = np.concatenate(
-          [top_preds[j + 1], dets[i, inds, 23:25].astype(np.float32)], axis=1)
-      else:
-        top_preds[j + 1] = np.concatenate(
-          [top_preds[j + 1], np.zeros((top_preds[j + 1].shape[0], 2), dtype=np.float32)], axis=1)
-      if opt.reg_roll:
-        top_preds[j + 1] = np.concatenate([top_preds[j + 1], dets[i, inds, 25][:, np.newaxis].astype(np.float32)], axis=1)
-      else:
-        top_preds[j + 1] = np.concatenate(
-          [top_preds[j + 1], np.zeros((top_preds[j + 1].shape[0], 1), dtype=np.float32)], axis=1)
+          [top_preds[j + 1], np.zeros((top_preds[j + 1].shape[0], 4), dtype=np.float32)], axis=1)
     ret.append(top_preds)
   return ret
 
@@ -117,55 +106,38 @@ def ddd_post_process_3d(dets, calibs, opt):
     for cls_ind in dets[i].keys():
       preds[cls_ind] = []
       for j in range(len(dets[i][cls_ind])):
-        center = (dets[i][cls_ind][j][:2] + dets[i][cls_ind][j][8:10])/2
+        center = (dets[i][cls_ind][j][:2] + dets[i][cls_ind][j][7:9])/2
 
         score = dets[i][cls_ind][j][2]
-        alpha = dets[i][cls_ind][j][3]
-        depth = dets[i][cls_ind][j][4]
-        dimensions = dets[i][cls_ind][j][5:8]
-        wh = -dets[i][cls_ind][j][:2] + dets[i][cls_ind][j][8:10]
-        if opt.reg_pitch:
-          pitch = dets[i][cls_ind][j][10]
-        if opt.reg_roll:
-          roll = dets[i][cls_ind][j][17]
+        depth = dets[i][cls_ind][j][3]
+        dimensions = dets[i][cls_ind][j][4:7]
+        wh = -dets[i][cls_ind][j][:2] + dets[i][cls_ind][j][7:9]
+
         if opt.reg_3d_center:
-          center3d = dets[i][cls_ind][j][11:13]
-          locations, rotation_y = ddd2locrot(
-            center3d, alpha, dimensions, depth, calibs[0])
+          center3d = dets[i][cls_ind][j][9:11]
+          locations = unproject_2d_to_3d(center3d, depth, calibs[0])
         else:
-          locations, rotation_y = ddd2locrot(
-            center, alpha, dimensions, depth, calibs[0])
+          locations = unproject_2d_to_3d(center, depth, calibs[0])
+
+        if opt.reg_q:
+          quaternions = dets[i][cls_ind][j][11:15]
+          norm = np.linalg.norm(quaternions, axis=0)
+          rot_pred_norm = quaternions / norm
+          # normalise the unit quaternion here
+          euler_angle = quaternion_to_euler_angle(rot_pred_norm)
+        else:
+          euler_angle = np.array([0,0,0], dtype=np.float)
         bbox = [center[0] - wh[0] / 2, center[1] - wh[1] / 2,
                 center[0] + wh[0] / 2, center[1] + wh[1] / 2]
-        pred = [alpha] + bbox + dimensions.tolist() + \
-               locations.tolist() + [rotation_y, score]
-        if opt.reg_pitch:
-          pred = pred + [pitch]
-        else:
-          pred = pred + [None]
 
-        if opt.reg_BPE:
-          BPE = dets[i][cls_ind][j][13:15]
-          pred = pred + BPE.tolist()
-        else:
-          pred = pred + [None, None]
-        if opt.reg_FPE:
-          FPE = dets[i][cls_ind][j][15:17]
-          pred = pred + FPE.tolist()
-        else:
-          pred = pred + [None, None]
+        pred = bbox + dimensions.tolist() + \
+               locations.tolist() + euler_angle.tolist() + [score]
+
         if opt.reg_3d_center:
           pred = pred + center3d.tolist()
         else:
           pred = pred + [None, None]
-        if opt.reg_roll:
-          if roll <=0:
-            roll = roll + np.pi
-          else:
-            roll = roll - np.pi
-          pred = pred + [roll]
-        else:
-          pred = pred + [None]
+
         preds[cls_ind].append(pred)
       preds[cls_ind] = np.array(preds[cls_ind], dtype=np.float32)
     ret.append(preds)

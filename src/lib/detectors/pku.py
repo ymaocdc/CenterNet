@@ -67,16 +67,14 @@ class PkuDetector(BaseDetector):
             output['dep'] = 1. / (output['dep'].sigmoid() + 1e-6) - 1.
             wh = output['wh'] if self.opt.reg_bbox else None
             reg = output['reg'] if self.opt.reg_offset else None
-            pitch = output['reg_pitch'] if self.opt.reg_pitch else None
-            roll = output['reg_roll'] if self.opt.reg_roll else None
+
             reg_3d = output['reg_3d_ct'] if self.opt.reg_3d_center else None
-            reg_BPE = output['reg_BPE'] if self.opt.reg_BPE else None
-            reg_FPE = output['reg_FPE'] if self.opt.reg_FPE else None
+            reg_q = output['reg_q'] if self.opt.reg_q else None
             torch.cuda.synchronize()
             forward_time = time.time()
 
             dets = ddd_decode(output['hm'], output['rot'], output['dep'],
-                              output['dim'], wh=wh, reg=reg, K=self.opt.K, pitch=pitch, reg_3d=reg_3d, reg_BPE=reg_BPE, reg_FPE=reg_FPE, roll=roll)
+                              output['dim'], wh=wh, reg=reg, K=self.opt.K, reg_3d=reg_3d, q=reg_q)
         if return_time:
             return output, dets, forward_time
         else:
@@ -95,7 +93,7 @@ class PkuDetector(BaseDetector):
 
         for j in range(1, self.num_classes + 1):
             if len(results[j] > 0):
-                keep_inds = (results[j][:, 12] > self.opt.peak_thresh)
+                keep_inds = (results[j][:, 13] > self.opt.peak_thresh)
                 results[j] = results[j][keep_inds]
 
         new_results = np.vstack([results[j] for j in range(1, self.num_classes + 1)])

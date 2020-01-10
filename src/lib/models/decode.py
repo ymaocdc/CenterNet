@@ -423,7 +423,7 @@ def exct_decode(
 
     return detections
 
-def ddd_decode(heat, rot, depth, dim, wh=None, reg=None, K=40, pitch=None, reg_3d=None, reg_BPE=None, reg_FPE=None, roll=None):
+def ddd_decode(heat, rot, depth, dim, wh=None, reg=None, K=40, reg_3d=None, q=None):
     batch, cat, height, width = heat.size()
     # heat = torch.sigmoid(heat)
     # perform nms on heatmaps
@@ -458,13 +458,6 @@ def ddd_decode(heat, rot, depth, dim, wh=None, reg=None, K=40, pitch=None, reg_3
     detections = torch.cat(
         [xs, ys, scores, rot, depth, dim, wh, clses], dim=2)
 
-    if pitch is not None:
-        pitch = _transpose_and_gather_feat(pitch, inds)
-        pitch = pitch.view(batch, K, 1)
-        pitch = pitch+0.15
-    else:
-        pitch = torch.cuda.FloatTensor(batch, K, 1).fill_(None)
-    detections = torch.cat([detections, pitch], dim=2)
 
     if reg_3d is not None:
         reg_3d = _transpose_and_gather_feat(reg_3d, inds)
@@ -476,33 +469,12 @@ def ddd_decode(heat, rot, depth, dim, wh=None, reg=None, K=40, pitch=None, reg_3
         ys_3d = torch.cuda.FloatTensor(batch, K, 1).fill_(0)
     detections = torch.cat([detections, xs_3d, ys_3d], dim=2)
 
-    if reg_BPE is not None:
-        reg_BPE = _transpose_and_gather_feat(reg_BPE, inds)
-        reg_BPE = reg_BPE.view(batch, K, 2)
-        LBPE = xs_t.view(batch, K, 1) - reg_BPE[:, :, 0:1]
-        RBPE = xs_t.view(batch, K, 1) - reg_BPE[:, :, 1:2]
+    if q is not None:
+        q = _transpose_and_gather_feat(q, inds)
+        q = q.view(batch, K, 4)
     else:
-        LBPE = torch.cuda.FloatTensor(batch, K, 1).fill_(0)
-        RBPE = torch.cuda.FloatTensor(batch, K, 1).fill_(0)
-    detections = torch.cat([detections, LBPE, RBPE], dim=2)
-
-    if reg_FPE is not None:
-        reg_FPE = _transpose_and_gather_feat(reg_FPE, inds)
-        reg_FPE = reg_FPE.view(batch, K, 2)
-        LFPE = xs_t.view(batch, K, 1) - reg_FPE[:, :, 0:1]
-        RFPE = xs_t.view(batch, K, 1) - reg_FPE[:, :, 1:2]
-    else:
-        LFPE = torch.cuda.FloatTensor(batch, K, 1).fill_(0)
-        RFPE = torch.cuda.FloatTensor(batch, K, 1).fill_(0)
-
-    detections = torch.cat([detections, LFPE, RFPE], dim=2)
-
-    if roll is not None:
-        roll = _transpose_and_gather_feat(roll, inds)
-        roll = roll.view(batch, K, 1)
-    else:
-        roll = torch.cuda.FloatTensor(batch, K, 1).fill_(0)
-    detections = torch.cat([detections, roll], dim=2)
+        q = torch.cuda.FloatTensor(batch, K, 4).fill_(0)
+    detections = torch.cat([detections, q], dim=2)
 
     return detections
 
