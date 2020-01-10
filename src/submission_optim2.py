@@ -137,6 +137,7 @@ def res2dict(dets, image_name, opt, center_thresh=0.2):
                 obj['3D_dimension'] = dim
                 obj['3D_location'] = loc
                 obj['2D_bbox_xyxy'] = bbox
+                obj['theta_ray'] = dets[cat][i, -1]
                 obj['global_yaw'] = rot_y
                 obj['conf_score'] = dets[cat][i, 12]
                 if opt.reg_pitch:
@@ -255,6 +256,8 @@ def demo(opt):
 
         predictions[image_name.split('/')[-1].split('.j')[0]] = []
         for cls_ind in ret:
+            if len(ret[cls_ind])>0:
+                ret[cls_ind] = np.concatenate((ret[cls_ind], np.zeros((ret[cls_ind].shape[0],1))), axis=1)
             for j in range(len(ret[cls_ind])):
                 # j=4
                 bbox = ret[cls_ind][j][1:5]
@@ -274,6 +277,7 @@ def demo(opt):
                 try:
                     box3d = Box(xmin, ymin, xmax, ymax, bpe_l, bpe_r, fpe_l, fpe_r, calib, L, W, H, tx, ty, tz, pitch, center3d=center3d, roll=roll)
                     box3d.lift_to_3d()
+                    ret[cls_ind][j, -1] = box3d.theta_ray
                     if debug:
                         img_cor_points = box3d.img_cor_points
                         if not img_cor_points is None:
