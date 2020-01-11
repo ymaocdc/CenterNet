@@ -327,6 +327,7 @@ if __name__ == "__main__":
 
         image = cv2.imread('/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku/data/images/train_images/' + img_name + '.jpg')
         # fig, ax = plt.subplots(figsize=(40, 40))
+        image = np.flip(image, axis=1)
         img = np.array(image[:,:,::-1])
         items = pred_string.split(' ')
         model_types, yaws, pitches, rolls, xs, ys, zs = [items[i::7] for i in range(7)]
@@ -334,6 +335,11 @@ if __name__ == "__main__":
             overlay = np.zeros((image.shape[0], image.shape[1],3), dtype=np.uint8)
             obj = {}
             yaw, pitch, roll, x, y, z = [float(x) for x in [yaw, pitch, roll, x, y, z]]
+
+            x = -x
+
+
+
             data, car_name = load_3dlabel(car_model)
 
             vertices = np.array(data['vertices'])
@@ -352,6 +358,11 @@ if __name__ == "__main__":
             ##very import , convert from --pi-pi to 0- 2pn
             if yaw < 0:
                 yaw = yaw +np.pi*2
+
+            yaw = np.pi*2 - yaw
+            roll = -roll
+
+
             obj['global_yaw'] = yaw
             obj['pitch'] = pitch
             obj['roll'] = roll
@@ -511,6 +522,6 @@ if __name__ == "__main__":
         # cv2.addWeighted(overlay, alpha, img, 1 - alpha, 0, img)
         plt.figure(figsize=(20, 20))
         plt.imshow(img)
-        plt.savefig(os.path.join(output_folder, img_name + '.jpg'))
-        # plt.show()
+        # plt.savefig(os.path.join(output_folder, img_name + '.jpg'))
+        plt.show()
 

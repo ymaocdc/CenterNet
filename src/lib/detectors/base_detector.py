@@ -99,6 +99,7 @@ class BaseDetector(object):
     load_time += (loaded_time - start_time)
 
     org_image = image.copy()
+    image = np.flip(image,axis=1)
     if self.opt.crop_half:
       image = image[self.opt.crop_from:, :, :]
 

@@ -230,11 +230,13 @@ def demo(opt):
         world_im = np.zeros((2000, 600), dtype=np.uint8)
         bottom_im = np.zeros((2000, 600), dtype=np.float)
         resolution = 0.1  # m/pixel
-        # if not 'ID_000372ced' in image_name:
-        #     continue
+        if not 'ID_0eb19ef56' in image_name:
+            continue
         if debug:
             org_im = cv2.imread(image_name)
+            org_im = np.flip(org_im, axis=1)
             img = org_im.copy()
+
         ret = detector.run(image_name)
         time_str = image_name
         for stat in time_stats:
@@ -262,7 +264,7 @@ def demo(opt):
                 img_cor_points, world_cor_points = Box.map_to_2d(
                     tx, ty, tz,
                     5, 2, 1.6,
-                    -pitch, -yaw, -roll)
+                    yaw, pitch, roll)
 
                 if not img_cor_points is None:
                     img_cor_points = img_cor_points

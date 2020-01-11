@@ -14,6 +14,7 @@ from utils.image import flip, color_aug
 from utils.image import get_affine_transform, affine_transform
 from utils.image import gaussian_radius, draw_umich_gaussian, draw_msra_gaussian
 import pycocotools.coco as coco
+from utils.post_process import quaternion_to_euler_angle
 
 class PKUDataset(data.Dataset):
     def _coco_box_to_bbox(self, box):
@@ -287,17 +288,20 @@ class PKUDataset(data.Dataset):
                     reg_FPE_mask[k] = 1
                     gt_det[-1] = gt_det[-1] + [ct[0] - FPE[0], ct[0] - FPE[1]]
 
+
                 yaw, pitch, roll = ann['global_yaw'], ann['pitch'], ann['roll']
                 if yaw > np.pi:
                     yaw = yaw - np.pi * 2
+                if flipped:
+                    yaw = -yaw
+                    roll = -roll
                 # pitch, yaw, roll = -yaw, -pitch, -roll
                 qn = self.euler_angles_to_quaternions(np.array([yaw, pitch, roll]))[0]
                 q = self.quaternion_upper_hemispher(qn)
-                from utils.post_process import quaternion_to_euler_angle
                 # norm = np.linalg.norm(q, axis=0)
                 # q = q / norm
                 euler_angle = quaternion_to_euler_angle(q)
-                if np.abs((euler_angle - [yaw, pitch, roll])).sum()>0.02:
+                if np.abs((euler_angle - [yaw, pitch, roll])).sum()>0.000001:
                     print(euler_angle - [yaw, pitch, roll])
                 if self.opt.reg_q:
                     reg_q[k] = q

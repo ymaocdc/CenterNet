@@ -42,7 +42,7 @@ class DddLoss(torch.nn.Module):
 
             hm_loss += self.crit(output['hm'], batch['hm']) / opt.num_stacks
             if opt.dep_weight >= 0:
-                dep_loss += self.crit_reg(output['dep'], batch['reg_q_mask'],
+                dep_loss += self.crit_reg(output['dep'], batch['rot_mask'],
                                           batch['ind'], batch['dep']) / opt.num_stacks
             if opt.dim_weight >= 0:
                 dim_loss += self.crit_reg(output['dim'], batch['reg_mask'],
@@ -73,7 +73,7 @@ class DddLoss(torch.nn.Module):
                 reg_FPE_loss += self.crit_reg(output['reg_FPE'], batch['reg_FPE_mask'],
                                               batch['ind'], batch['reg_FPE']) / opt.num_stacks
             if opt.reg_q and opt.q_weight >= 0:
-                req_q_loss += self.crit_reg(output['reg_q'], batch['reg_q_mask'],
+                req_q_loss += self.crit_reg(output['reg_q'], batch['rot_mask'],
                                           batch['ind'], batch['reg_q']) / opt.num_stacks
 
         loss = opt.hm_weight * hm_loss + opt.dep_weight * dep_loss + \
