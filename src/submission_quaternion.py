@@ -230,11 +230,11 @@ def demo(opt):
         world_im = np.zeros((2000, 600), dtype=np.uint8)
         bottom_im = np.zeros((2000, 600), dtype=np.float)
         resolution = 0.1  # m/pixel
-        if not 'ID_0eb19ef56' in image_name:
-            continue
+        # if not 'ID_0eb19ef56' in image_name:
+            # continue
         if debug:
             org_im = cv2.imread(image_name)
-            org_im = np.flip(org_im, axis=1)
+            # org_im = np.flip(org_im, axis=1)
             img = org_im.copy()
 
         ret = detector.run(image_name)
@@ -282,7 +282,7 @@ def demo(opt):
                         bottom[:, 0] = bottom[:, 0] + world_im.shape[1] // 2
                         cv2.fillConvexPoly(world_im, bottom, 255)
 
-                s = [yaw, pitch, roll, tx, ty, tz,
+                s = [-pitch, -yaw, -roll, tx, ty, tz,
                      ret[cls_ind][j][13]]
                 predictions[image_name.split('/')[-1].split('.j')[0]].append(coords2str(s))
         predictions[image_name.split('/')[-1].split('.j')[0]] = ' '.join(predictions[image_name.split('/')[-1].split('.j')[0]])
@@ -315,7 +315,7 @@ def demo(opt):
             plt.imshow(comb)
             plt.savefig(os.path.join(optim_output_folder, image_name.split('/')[-1].split('.')[0] + '.jpg'),
                         bbox_inches='tight', pad_inches=0)
-            plt.show()
+            # plt.show()
             plt.close(fig)
 
         # optm_results = res2dict(ret, image_name, opt, center_thresh=opt.peak_thresh)

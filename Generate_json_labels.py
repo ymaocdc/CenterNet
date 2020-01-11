@@ -229,15 +229,15 @@ def draw_points(image, points):
     return image
 if __name__ == "__main__":
 
-    x, y, z, w, h, l, yaw, pitch, roll = -2,2,10,2,1.6,6, 0, 0, np.pi/4
-    img_cor_points = map2d(x, y, z, w, h, l, yaw, pitch, roll)
-    img_cor_points = img_cor_points.astype(int)
-    img = np.zeros((2710, 3384, 3), dtype=np.uint8)
-    img = draw_points(img, img_cor_points)
-    img = draw_line(img, img_cor_points)
-    plt.clf()
-    plt.imshow(img[:,:,::-1])
-    plt.show()
+    # x, y, z, w, h, l, yaw, pitch, roll = -2,2,10,2,1.6,6, 0, 0, np.pi/4
+    # img_cor_points = map2d(x, y, z, w, h, l, yaw, pitch, roll)
+    # img_cor_points = img_cor_points.astype(int)
+    # img = np.zeros((2710, 3384, 3), dtype=np.uint8)
+    # img = draw_points(img, img_cor_points)
+    # img = draw_line(img, img_cor_points)
+    # plt.clf()
+    # plt.imshow(img[:,:,::-1])
+    # plt.show()
 
 
     # a label and all meta information
@@ -338,14 +338,17 @@ if __name__ == "__main__":
     car_name2id = {label.name: label for label in models}
     car_id2name = {label.id: label for label in models}
 
-    train = pd.read_csv('/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku/train.csv')
+    # train = pd.read_csv('/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku/train.csv')
+    train = pd.read_csv('/xmotors_ai_shared/datasets/incubator/user/yus/dataset/apollo/data/train/train.csv')
 
     plt.close()
     plt.rcParams["axes.grid"] = False
-    output_folder = '/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku/with_mask_labels'
+    output_folder = '/xmotors_ai_shared/datasets/incubator/user/yus/dataset/apollo/with_mask_labels'
 
     import glob
-    imgs = glob.glob(os.path.join('/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku/data/images/train_images/', '*jpg'))
+    image_dir = '/xmotors_ai_shared/datasets/incubator/user/yus/dataset/apollo/data/train/images/'
+    # '/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku/data/images/train_images/'
+    imgs = glob.glob(os.path.join(image_dir, '*jpg'))
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
     image = cv2.imread(imgs[0])
@@ -360,7 +363,7 @@ if __name__ == "__main__":
         # if os.path.exists(os.path.join(output_folder, img_name + '.json')):
         #     continue
 
-        image = cv2.imread('/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku/data/images/train_images/' + img_name + '.jpg')
+        image = cv2.imread(image_dir + img_name + '.jpg')
         img = image.copy()
         # fig, ax = plt.subplots(figsize=(40, 40))
         items = pred_string.split(' ')
@@ -502,30 +505,30 @@ if __name__ == "__main__":
 
 
 
-            #code to check coordinate
-            # cv2.rectangle(img, (obj['2D_bbox_xyxy'][0], obj['2D_bbox_xyxy'][1]), (obj['2D_bbox_xyxy'][2], obj['2D_bbox_xyxy'][3]), (255, 0,0) , 5)
-            # cv2.line(img, (obj['FPE_left'][0], obj['2D_bbox_xyxy'][1]), (obj['FPE_left'][0], obj['2D_bbox_xyxy'][3]),
-            #          (0, 255, 255), 5)
-            # cv2.line(img, (obj['FPE_right'][0], obj['2D_bbox_xyxy'][1]), (obj['FPE_right'][0], obj['2D_bbox_xyxy'][3]),
-            #          (0, 255, 0), 5)
-            # cv2.line(img, (obj['BPE_left'][0], obj['2D_bbox_xyxy'][1]), (obj['BPE_left'][0], obj['2D_bbox_xyxy'][3]),
-            #          (0, 0, 255), 5)
-            # cv2.line(img, (obj['BPE_right'][0], obj['2D_bbox_xyxy'][1]), (obj['BPE_right'][0], obj['2D_bbox_xyxy'][3]),
-            #          (255, 255, 0), 5)
-            # img_cor_points = map2d(x, y, z,W,H,L, -yaw, -pitch, 0)
-            # img_cor_points = img_cor_points.astype(int)
-            # # img = draw_points(img, img_cor_points)
-            # img = draw_line(img, img_cor_points)
-            # plt.clf()
-            # plt.imshow(img[:, :, ::-1])
-            # plt.show()
+        #     #code to check coordinate
+        #     cv2.rectangle(img, (obj['2D_bbox_xyxy'][0], obj['2D_bbox_xyxy'][1]), (obj['2D_bbox_xyxy'][2], obj['2D_bbox_xyxy'][3]), (255, 0,0) , 5)
+        #     cv2.line(img, (obj['FPE_left'][0], obj['2D_bbox_xyxy'][1]), (obj['FPE_left'][0], obj['2D_bbox_xyxy'][3]),
+        #              (0, 255, 255), 5)
+        #     cv2.line(img, (obj['FPE_right'][0], obj['2D_bbox_xyxy'][1]), (obj['FPE_right'][0], obj['2D_bbox_xyxy'][3]),
+        #              (0, 255, 0), 5)
+        #     cv2.line(img, (obj['BPE_left'][0], obj['2D_bbox_xyxy'][1]), (obj['BPE_left'][0], obj['2D_bbox_xyxy'][3]),
+        #              (0, 0, 255), 5)
+        #     cv2.line(img, (obj['BPE_right'][0], obj['2D_bbox_xyxy'][1]), (obj['BPE_right'][0], obj['2D_bbox_xyxy'][3]),
+        #              (255, 255, 0), 5)
+        #     img_cor_points = map2d(x, y, z,W,H,L, -yaw, -pitch, 0)
+        #     img_cor_points = img_cor_points.astype(int)
+        #     # img = draw_points(img, img_cor_points)
+        #     img = draw_line(img, img_cor_points)
+        # plt.clf()
+        # plt.imshow(img[:, :, ::-1])
+        # plt.show()
 
             # cv2.rectangle(img, (obj['2D_bbox_xyxy'][0], obj['2D_bbox_xyxy'][1]),
             #               (obj['2D_bbox_xyxy'][2], obj['2D_bbox_xyxy'][3]), (0, 0, 255), 5)
 
 
-        # with open(os.path.join(output_folder, img_name + '.json'), 'w') as fout:
-        #     json.dump(gt, fout, cls=NumpyEncoder)
+        with open(os.path.join(output_folder, img_name + '.json'), 'w') as fout:
+            json.dump(gt, fout, cls=NumpyEncoder)
 
         # image = Image.fromarray(img)
         # alpha = .5

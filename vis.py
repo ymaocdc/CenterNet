@@ -304,14 +304,14 @@ if __name__ == "__main__":
     car_name2id = {label.name: label for label in models}
     car_id2name = {label.id: label for label in models}
 
-    train = pd.read_csv('/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku/train.csv')
+    train = pd.read_csv('/xmotors_ai_shared/datasets/incubator/user/yus/dataset/apollo/data/train/train.csv')
 
     plt.close()
     plt.rcParams["axes.grid"] = False
     output_folder = '/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku/vis_train'
 
     import glob
-    imgs = glob.glob(os.path.join('/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku/data/images/train_images/', '*jpg'))
+    imgs = glob.glob(os.path.join('/xmotors_ai_shared/datasets/incubator/user/yus/dataset/apollo/data/train/images', '*jpg'))
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
     image = cv2.imread(imgs[0])
@@ -321,13 +321,15 @@ if __name__ == "__main__":
 
         img_name = train.loc[id]['ImageId']
         pred_string = train.loc[id]['PredictionString']
-
+        print(img_name)
+        if not '180118_070359922_Camera_5' in img_name:
+            continue
         # if os.path.exists(os.path.join(output_folder, img_name + '.json')):
         #     continue
 
-        image = cv2.imread('/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku/data/images/train_images/' + img_name + '.jpg')
+        image = cv2.imread('/xmotors_ai_shared/datasets/incubator/user/yus/dataset/apollo/data/train/images/' + img_name + '.jpg')
         # fig, ax = plt.subplots(figsize=(40, 40))
-        image = np.flip(image, axis=1)
+        # image = np.flip(image, axis=1)
         img = np.array(image[:,:,::-1])
         items = pred_string.split(' ')
         model_types, yaws, pitches, rolls, xs, ys, zs = [items[i::7] for i in range(7)]
@@ -336,7 +338,7 @@ if __name__ == "__main__":
             obj = {}
             yaw, pitch, roll, x, y, z = [float(x) for x in [yaw, pitch, roll, x, y, z]]
 
-            x = -x
+            # x = -x
 
 
 
@@ -359,8 +361,8 @@ if __name__ == "__main__":
             if yaw < 0:
                 yaw = yaw +np.pi*2
 
-            yaw = np.pi*2 - yaw
-            roll = -roll
+            # yaw = np.pi*2 - yaw
+            # roll = -roll
 
 
             obj['global_yaw'] = yaw
@@ -525,3 +527,19 @@ if __name__ == "__main__":
         # plt.savefig(os.path.join(output_folder, img_name + '.jpg'))
         plt.show()
 
+import json
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+with open('/xmotors_ai_shared/datasets/incubator/user/yus/dataset/apollo/data/car_models_json/sikeda-jingrui.json') as json_file:
+    data = json.load(json_file)
+    vertices = np.array(data['vertices'])
+    triangles = np.array(data['faces']) - 1
+    plt.figure(figsize=(20,10))
+    ax = plt.axes(projection='3d')
+    ax.set_title('car_type: '+data['car_type'])
+    ax.set_xlim([-3, 3])
+    ax.set_ylim([-3, 3])
+    ax.set_zlim([0, 3])
+    ax.plot_trisurf(vertices[:,0], vertices[:,2], triangles, -vertices[:,1], shade=True, color='grey')
