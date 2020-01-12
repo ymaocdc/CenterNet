@@ -172,7 +172,7 @@ def demo(opt):
   Detector = detector_factory[opt.task]
   detector = Detector(opt)
 
-  suffix = 'test_results'
+  suffix = '_fix_res'
   model_outputfolder = os.path.join(opt.root_dir, 'model_prediction_resutls', opt.load_model.split('/')[-2]+suffix)
   if not os.path.exists(model_outputfolder):
       os.mkdir(model_outputfolder)

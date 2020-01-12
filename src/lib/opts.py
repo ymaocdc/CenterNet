@@ -200,7 +200,7 @@ class opts(object):
                              help='regress quaternion.')
     self.parser.add_argument('--q_weight', type=float, default=1,
                              help='loss weight for quaternion.')
-
+    self.parser.add_argument('--combine_apollo',default=False, action='store_true')
     self.parser.add_argument('--peak_thresh', type=float, default=0.2)
     
     # task

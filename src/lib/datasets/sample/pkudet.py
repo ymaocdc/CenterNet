@@ -89,8 +89,17 @@ class PKUDataset(data.Dataset):
     def __getitem__(self, index):
         img_id = self.images[index]
         img_info = self.coco.loadImgs(ids=[img_id])[0]
-        img_path = os.path.join(self.img_dir, img_info['file_name'])
-        img = cv2.imread(img_path)
+
+        if self.opt.combine_apollo:
+            img_path = os.path.join(self.img_dir, img_info['file_name'])
+            if os.path.exists(img_path):
+                img = cv2.imread(img_path)
+            else:
+                img_path = os.path.join(self.apollo_img_dir, img_info['file_name'])
+                img = cv2.imread(img_path)
+        else:
+            img_path = os.path.join(self.img_dir, img_info['file_name'])
+            img = cv2.imread(img_path)
         if self.opt.crop_half:
             img = img[self.opt.crop_from:,:,:]
 

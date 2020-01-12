@@ -49,6 +49,9 @@ for cls, clsname in enumerate(__CLASS__):
             "name": clsname
         }
     )
+for k in range(len(gta['images'])):
+    gta['images'][k]['id'] = gta['images'][k]['id'] + len( gtk['images'])
+    gta['annotations'][k]['id'] = gta['annotations'][k]['id'] + len(gtk['images'])
 
 annotations["images"] = gta['images'] + gtk['images']
 annotations["annotations"] = gta['annotations'] + gtk['annotations']

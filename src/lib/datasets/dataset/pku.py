@@ -24,12 +24,22 @@ class PKU(data.Dataset):
         super(PKU, self).__init__()
         self.data_dir = os.path.join(opt.data_dir)
         self.root_dir = opt.root_dir
-
+        self.opt = opt
 
         # split =
         self.img_dir = os.path.join(self.data_dir, 'images', '{}_images'.format(split))
-        self.annot_path = os.path.join(self.data_dir, 'annotations', '{}_coco_format_correct_yaw.json').format(split)
-
+        if split == 'train' and self.opt.combine_apollo:
+            self.apollo_img_dir = '/xmotors_ai_shared/datasets/incubator/user/yus/dataset/apollo/data/train/images/'
+        # self.annot_path = os.path.join(self.data_dir, 'annotations', '{}_coco_format_correct_yaw.json').format(split)
+        if split == 'train':
+            if self.opt.combine_apollo:
+                self.annot_path = os.path.join('/xmotors_ai_shared/datasets/incubator/user/yus/dataset/apollo/data/', 'combine_gt_train.json')
+            else:
+                self.annot_path = os.path.join(self.data_dir, 'annotations', '{}_coco_format_correct_yaw.json').format(
+                    split)
+        else:
+            self.annot_path = os.path.join(self.data_dir, 'annotations', '{}_coco_format_correct_yaw.json').format(
+                split)
         # self.annot_path = os.path.join(self.data_dir, 'annotations', 'train_coco_format_overfit.json')
         self.max_objs = 50
         self.class_name = [
@@ -49,7 +59,7 @@ class PKU(data.Dataset):
             [-0.56089297, 0.71832671, 0.41158938]
         ], dtype=np.float32)
         self.split = split
-        self.opt = opt
+
         self.alpha_in_degree = False
 
         print('==> initializing pku {} data.'.format(split))
