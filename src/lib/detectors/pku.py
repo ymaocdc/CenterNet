@@ -98,7 +98,7 @@ class PkuDetector(BaseDetector):
 
         new_results = np.vstack([results[j] for j in range(1, self.num_classes + 1)])
 
-        keep_inds = nms(new_results, 0.7)
+        keep_inds = nms(new_results, 0.5)
         new_results = new_results[keep_inds]
         new_dict = {}
         for j in range(1, self.num_classes + 1):
