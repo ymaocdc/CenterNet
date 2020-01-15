@@ -21,20 +21,20 @@ def draw_lines(img, points, linewidth=3, style='allw'):
 
     if style == 'fb':#front back
         color = (0, 0, 255)
-        cv2.line(img, tuple(points[2][:2]), tuple(points[3][:2]), color, linewidth)
-        cv2.line(img, tuple(points[3][:2]), tuple(points[7][:2]), color, linewidth)
+        # cv2.line(img, tuple(points[2][:2]), tuple(points[3][:2]), color, linewidth)
+        # cv2.line(img, tuple(points[3][:2]), tuple(points[7][:2]), color, linewidth)
         cv2.line(img, tuple(points[6][:2]), tuple(points[7][:2]), color, linewidth)
-        cv2.line(img, tuple(points[2][:2]), tuple(points[6][:2]), color, linewidth)
+        # cv2.line(img, tuple(points[2][:2]), tuple(points[6][:2]), color, linewidth)
         color = (255, 0, 0)
-        cv2.line(img, tuple(points[1][:2]), tuple(points[2][:2]), color, linewidth)
-        cv2.line(img, tuple(points[3][:2]), tuple(points[4][:2]), color, linewidth)
+        # cv2.line(img, tuple(points[1][:2]), tuple(points[2][:2]), color, linewidth)
+        # cv2.line(img, tuple(points[3][:2]), tuple(points[4][:2]), color, linewidth)
         cv2.line(img, tuple(points[5][:2]), tuple(points[6][:2]), color, linewidth)
         cv2.line(img, tuple(points[7][:2]), tuple(points[8][:2]), color, linewidth)
         color = (0, 255, 0)
-        cv2.line(img, tuple(points[1][:2]), tuple(points[5][:2]), color, linewidth)
+        # cv2.line(img, tuple(points[1][:2]), tuple(points[5][:2]), color, linewidth)
         cv2.line(img, tuple(points[5][:2]), tuple(points[8][:2]), color, linewidth)
-        cv2.line(img, tuple(points[4][:2]), tuple(points[8][:2]), color, linewidth)
-        cv2.line(img, tuple(points[1][:2]), tuple(points[4][:2]), color, linewidth)
+        # cv2.line(img, tuple(points[4][:2]), tuple(points[8][:2]), color, linewidth)
+        # cv2.line(img, tuple(points[1][:2]), tuple(points[4][:2]), color, linewidth)
     elif style == 'tb':# top bottom
         color = (0, 0, 255)
         cv2.line(img, tuple(points[5][:2]), tuple(points[8][:2]), color, linewidth)
@@ -76,6 +76,8 @@ def draw_lines(img, points, linewidth=3, style='allw'):
 def draw_corners(img, points):
     "Draw 8 corners and centroid of 3d bbox on image"
     for idx, (p_x, p_y, p_z) in enumerate(points):
+        if 0 < idx < 5 :
+            continue
         if idx == 0:
             color = (0, 128, 255)
         elif idx == 1:
@@ -261,6 +263,12 @@ def demo(opt):
                 yaw, pitch, roll = ret[cls_ind][j, 10:13]
                 tx, ty, tz = ret[cls_ind][j, 7:10]
                 score = ret[cls_ind][j, 13]
+                bbox = ret[cls_ind][j][:4]
+
+                xc = int((bbox[0] + bbox[2]) // 2)
+                yc = int((bbox[1] + bbox[3]) // 2)
+                if test_mask[yc, xc] > 125:
+                    continue
                 img_cor_points, world_cor_points = Box.map_to_2d(
                     tx, ty, tz,
                     5, 2, 1.6,
@@ -272,7 +280,7 @@ def demo(opt):
                     img = draw_lines(img, img_cor_points, style='fb')
 
                     text = '{0:.2f}'.format(score)
-                    cv2.putText(img, text, tuple((img_cor_points[1][0] - 5, img_cor_points[1][1] - 20)), 7, 1,
+                    cv2.putText(img, text, tuple((img_cor_points[0][0] - 5, img_cor_points[0][1] - 5)), 7, 1,
                                 (0, 50, 255), 2, cv2.LINE_AA)
 
                     if not world_cor_points is None:
@@ -311,7 +319,7 @@ def demo(opt):
 
             comb = np.concatenate((img[:, :, ::-1], world_im), axis=1)
 
-            fig = plt.figure(figsize=(20, 20))
+            fig = plt.figure(figsize=(10, 10),dpi=200)
             plt.imshow(comb)
             plt.savefig(os.path.join(optim_output_folder, image_name.split('/')[-1].split('.')[0] + '.jpg'),
                         bbox_inches='tight', pad_inches=0)
