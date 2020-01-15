@@ -226,7 +226,7 @@ def demo(opt):
                       [0, 0, 1]], dtype=np.float32)
 
     predictions = {}
-    for (image_name) in image_names:
+    for (image_name) in image_names[:8]:
         world_im = np.zeros((2000, 600), dtype=np.uint8)
         bottom_im = np.zeros((2000, 600), dtype=np.float)
         resolution = 0.1  # m/pixel

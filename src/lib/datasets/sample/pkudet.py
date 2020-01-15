@@ -317,7 +317,13 @@ class PKUDataset(data.Dataset):
                     reg_q_mask[k] = 1
                     gt_det[-1] = gt_det[-1] + q.tolist()
 
-                dep[k] = ann['3D_location'][2]
+                alpha = 0.5
+                beta = 150.0
+                K = 100.0
+                depth = ann['3D_location'][2]
+                depth = K * np.log(depth / alpha) / np.log(beta / alpha)
+
+                dep[k] = depth
                 dim[k] = ann['3D_dimension']
                 # print('        cat dim', cls_id, dim[k])
                 ind[k] = ct_int[1] * self.opt.output_w + ct_int[0]

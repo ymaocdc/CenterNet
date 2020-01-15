@@ -5,13 +5,14 @@ from __future__ import print_function
 import torch
 import numpy as np
 
-from models.losses import FocalLoss, L1Loss, BinRotLoss
+from models.losses import FocalLoss, L1Loss, BinRotLoss, ordLoss
 from models.decode import ddd_decode
 from models.utils import _sigmoid
 from utils.debugger import Debugger
 from utils.post_process import ddd_post_process
 from utils.oracle_utils import gen_oracle_map
 from .base_trainer import BaseTrainer
+
 
 
 class DddLoss(torch.nn.Module):
@@ -23,7 +24,30 @@ class DddLoss(torch.nn.Module):
         if opt.reg_pitch:
             self.crit_pitch = BinRotLoss()
         self.opt = opt
+        self.crit_dep = ordLoss()
 
+    def depth_dorn_foward(self, depth_prediction):
+        N, C, H, W = depth_prediction.size()
+        ord_num = C // 2
+
+        """
+        replace iter with matrix operation
+        fast speed methods
+        """
+        A = depth_prediction[:, ::2, :, :].clone()
+        B = depth_prediction[:, 1::2, :, :].clone()
+
+        A = A.view(N, 1, ord_num * H * W)
+        B = B.view(N, 1, ord_num * H * W)
+
+        C = torch.cat((A, B), dim=1)
+        C = torch.clamp(C, min=1e-8, max=1e8)  # prevent nans
+
+        ord_c = torch.nn.functional.softmax(C, dim=1)
+        ord_c1 = ord_c[:, 1, :].clone()
+        ord_c1 = ord_c1.view(-1, ord_num, H, W)
+        decode_c = torch.sum((ord_c1 > 0.5), dim=1).view(-1, 1, H, W)
+        return decode_c, ord_c1
     def forward(self, outputs, batch):
         opt = self.opt
 
@@ -32,7 +56,8 @@ class DddLoss(torch.nn.Module):
         for s in range(opt.num_stacks):
             output = outputs[s]
             output['hm'] = _sigmoid(output['hm'])
-            output['dep'] = 1. / (output['dep'].sigmoid() + 1e-6) - 1.
+
+            # output['dep'] = 1. / (output['dep'].sigmoid() + 1e-6) - 1.
 
             if opt.eval_oracle_dep:
                 output['dep'] = torch.from_numpy(gen_oracle_map(
@@ -42,8 +67,11 @@ class DddLoss(torch.nn.Module):
 
             hm_loss += self.crit(output['hm'], batch['hm']) / opt.num_stacks
             if opt.dep_weight >= 0:
-                dep_loss += self.crit_reg(output['dep'], batch['rot_mask'],
-                                          batch['ind'], batch['dep']) / opt.num_stacks
+                depth_decode, depth_prediction = self.depth_dorn_foward(output['dep'])
+                dep_loss += self.crit_dep(depth_prediction, batch['dep'], batch['ind'], batch['rot_mask'])/ opt.num_stacks
+
+                # dep_loss += self.crit_reg(output['dep'], batch['rot_mask'],
+                #                           batch['ind'], batch['dep']) / opt.num_stacks
             if opt.dim_weight >= 0:
                 dim_loss += self.crit_reg(output['dim'], batch['reg_mask'],
                                           batch['ind'], batch['dim']) / opt.num_stacks

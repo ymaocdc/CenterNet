@@ -378,6 +378,7 @@ class opts(object):
           opt.heads.update({'reg_roll': 1})
       if opt.reg_q:
           opt.heads.update({'reg_q': 4})
+      opt.heads.update({'dep': 2*71})
     else:
       assert 0, 'task not defined!'
     print('heads', opt.heads)

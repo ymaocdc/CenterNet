@@ -40,7 +40,7 @@ class PKU(data.Dataset):
         else:
             self.annot_path = os.path.join(self.data_dir, 'annotations', '{}_coco_format_correct_yaw.json').format(
                 split)
-        # self.annot_path = os.path.join(self.data_dir, 'annotations', 'train_coco_format_overfit.json')
+        self.annot_path = os.path.join(self.data_dir, 'annotations', 'train_coco_format_overfit.json')
         self.max_objs = 50
         self.class_name = [
             '__background__', '2x', '3x', 'SUV']

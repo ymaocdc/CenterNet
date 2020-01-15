@@ -13,14 +13,15 @@ class NumpyEncoder(json.JSONEncoder):
 
 mode = 'train'
 
-root_folder = '/xmotors_ai_shared/datasets/incubator/user/yus/dataset/apollo'
-# image_folder = os.path.join(root_folder, 'data/images', '{}_images'.format(mode))
-# label_folder = os.path.join(root_folder, 'with_mask_labels')
-# output_folder = os.path.join(root_folder, 'data/annotations')
-
-image_folder = os.path.join(root_folder, 'data/train/images')
+root_folder = '/xmotors_ai_shared/datasets/incubator/user/yus/dataset/pku'
+image_folder = os.path.join(root_folder, 'data/images', '{}_images'.format(mode))
 label_folder = os.path.join(root_folder, 'with_mask_labels')
-output_folder = os.path.join(root_folder, 'data')
+output_folder = os.path.join(root_folder, 'data/annotations')
+
+# image_folder = os.path.join(root_folder, 'data/train/images')
+# label_folder = os.path.join(root_folder, 'with_mask_labels')
+# output_folder = os.path.join(root_folder, 'data')
+
 __CLASS__ = ['__background__', '2x', '3x', 'SUV']
 _class_ = np.array(__CLASS__)
 # __CLASS__ = ['bg', 'car']
@@ -64,7 +65,7 @@ assert len(im_files) == len(label_files)
 annotations["images"] = []
 annotations["annotations"] = []
 num_obj = 0
-for image_id, im_file in enumerate(tqdm(im_files)):
+for image_id, im_file in enumerate(tqdm(im_files[:8])):
     # if not 'ID_0ad448f58' in im_file:
     #     continue
     width = 3384
@@ -113,6 +114,6 @@ for image_id, im_file in enumerate(tqdm(im_files)):
         )
         num_obj = num_obj + 1
 
-json_path = os.path.join(output_folder, '{}_coco_format'.format(mode)+".json")
+json_path = os.path.join(output_folder, '{}_coco_format_overfit'.format(mode)+".json")
 with open(json_path, "w") as f:
     json.dump(annotations, f,cls=NumpyEncoder)

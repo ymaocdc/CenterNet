@@ -173,6 +173,55 @@ class RegWeightedL1Loss(nn.Module):
     loss = F.l1_loss(pred * mask, target * mask, size_average=False)
     loss = loss / (mask.sum() + 1e-4)
     return loss
+import torch.nn as nn
+
+class ordLoss(nn.Module):
+    """
+    Ordinal loss is defined as the average of pixelwise ordinal loss F(h, w, X, O)
+    over the entire image domain:
+    """
+
+    def __init__(self):
+        super(ordLoss, self).__init__()
+        self.loss = 0.0
+
+    def forward(self, ord_labels, target, ind, mask):
+        """
+        :param ord_labels: ordinal labels for each position of Image I.
+        :param target:     the ground_truth discreted using SID strategy.
+        :return: ordinal loss
+        """
+        # assert pred.dim() == target.dim()
+        # invalid_mask = target < 0
+        # target[invalid_mask] = 0
+
+        pred = _transpose_and_gather_feat(ord_labels, ind)
+        mask = mask.unsqueeze(2).expand_as(pred).float()
+
+        N, obj_num, C = pred.size()
+        ord_num = C
+
+        self.loss = 0.0
+
+        # faster version
+        if torch.cuda.is_available():
+            K = torch.zeros(( N, obj_num, C), dtype=torch.int).cuda()
+            for i in range(ord_num):
+                K[:, :, i] = K[:, :, i] + i * torch.ones((N, 1), dtype=torch.int).cuda()
+
+        mask_0 = (K <= target.int()).detach()
+        mask_1 = (K > target.int()).detach()
+
+        one = torch.ones(pred[mask_1].size())
+        if torch.cuda.is_available():
+            one = one.cuda()
+
+        self.loss += torch.sum(torch.log(torch.clamp(pred[mask_0], min=1e-8, max=1e8))) \
+                     + torch.sum(torch.log(torch.clamp(one - pred[mask_1], min=1e-8, max=1e8)))
+
+
+        self.loss /= (-mask.sum())  # negative
+        return self.loss
 
 class L1Loss(nn.Module):
   def __init__(self):
